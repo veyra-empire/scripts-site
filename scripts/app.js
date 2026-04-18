@@ -2,20 +2,26 @@
   'use strict';
 
   // ─── CONFIG ──────────────────────────────────────────────────────────────
-  // Apps Script web-app /exec URL. Replace with the real deployment URL.
-  // (Same URL embedded in every installed script's @updateURL — not secret.)
+  // Apps Script /exec URL (not secret — baked into every installed script's
+  // @updateURL). Only used for JSONP data calls + install button URLs.
   var PROXY_URL = 'https://script.google.com/macros/s/AKfycbzUHg1z18WmWFSyEsZStaK2kmax2JXnPzK4LrTyEitSFVBQ2u2vfFeO6wZhjWx58EJZ7w/exec';
 
+  // Discord OAuth app (public values per Discord docs).
+  var CLIENT_ID    = '1494917616878227597';
+  var REDIRECT_URI = 'https://veyra-empire.github.io/scripts/';
+
   var TIER_ORDER = ['probationary', 'member', 'trusted', 'owner'];
+  var CACHE_KEY  = 'veyra_session';       // sessionStorage key for the rendered payload
+  var STATE_KEY  = 'veyra_oauth_state';   // sessionStorage key for the CSRF state token
 
   // ─── JSONP helper ────────────────────────────────────────────────────────
-  // Apps Script /exec 302-redirects through googleusercontent.com, which
-  // strips CORS headers. JSONP (response loaded as <script>) sidesteps CORS.
+  // Apps Script /exec 302-redirects through googleusercontent.com and strips
+  // CORS headers, so we load responses as <script> tags (bypasses CORS).
   function jsonp(url) {
     return new Promise(function(resolve, reject) {
       var cb = '__veyra_cb_' + Math.random().toString(36).slice(2) + '_' + Date.now();
       var script = document.createElement('script');
-      var timer = setTimeout(function() { cleanup(); reject(new Error('timeout')); }, 15000);
+      var timer = setTimeout(function() { cleanup(); reject(new Error('timeout')); }, 30000);
       function cleanup() {
         clearTimeout(timer);
         try { delete window[cb]; } catch (_) { window[cb] = undefined; }
@@ -50,12 +56,12 @@
     section.hidden = false;
   }
 
-  // ─── Hash parsing ────────────────────────────────────────────────────────
-  function parseHash() {
-    var h = location.hash.replace(/^#/, '');
+  // ─── Query-string parsing (OAuth callback lands here with ?code=&state=) ─
+  function parseQuery() {
+    var s = location.search.replace(/^\?/, '');
     var out = {};
-    if (!h) return out;
-    h.split('&').forEach(function(kv) {
+    if (!s) return out;
+    s.split('&').forEach(function(kv) {
       var i = kv.indexOf('=');
       if (i < 0) out[decodeURIComponent(kv)] = '';
       else out[decodeURIComponent(kv.slice(0, i))] = decodeURIComponent(kv.slice(i + 1));
@@ -63,11 +69,9 @@
     return out;
   }
 
-  function clearHash() {
+  function clearQuery() {
     if (history.replaceState) {
-      history.replaceState(null, '', location.pathname + location.search);
-    } else {
-      location.hash = '';
+      history.replaceState(null, '', location.pathname);
     }
   }
 
@@ -76,13 +80,11 @@
     'not-in-guild':    "Your Discord account isn't in the VEYRA EMPIRE guild. Join the guild first, then come back.",
     'no-tier':         "You're in the guild, but you haven't been assigned a tier yet. Check with an officer on Discord to get registered.",
     'not-configured':  "The sign-in system isn't configured yet. Contact the admin.",
-    'oauth-state':     "Sign-in failed. Try again, or contact an officer if it keeps happening.",
+    'oauth-state':     "Sign-in failed: state token mismatch. Try again.",
     'oauth-exchange':  "Sign-in failed. Try again, or contact an officer if it keeps happening.",
     'oauth-identity':  "Sign-in failed. Try again, or contact an officer if it keeps happening.",
     'oauth-guilds':    "Sign-in failed. Try again, or contact an officer if it keeps happening.",
-    'oauth-error':     "Sign-in failed. Try again, or contact an officer if it keeps happening.",
-    'bad-token':       "That install link is no longer valid. Ask an officer for a fresh one.",
-    'expired':         "Your session expired. Sign in again."
+    'oauth-error':     "Sign-in failed. Try again, or contact an officer if it keeps happening."
   };
 
   function showDenied(reason) {
@@ -98,7 +100,7 @@
     elTier.textContent = data.tier || '';
     elTier.className = 'tier-badge tier-' + (data.tier || '');
 
-    var sid = sessionStorage.getItem('sid') || '';
+    var sid = data.sid || '';
     var scripts = data.scripts || [];
 
     if (scripts.length === 0) {
@@ -193,70 +195,92 @@
     applySort();
   });
 
+  // ─── Discord authorize URL ───────────────────────────────────────────────
+  function buildAuthorizeUrl(state) {
+    return 'https://discord.com/oauth2/authorize' +
+           '?response_type=code' +
+           '&client_id='    + encodeURIComponent(CLIENT_ID) +
+           '&scope='        + encodeURIComponent('identify guilds') +
+           '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) +
+           '&state='        + encodeURIComponent(state) +
+           '&prompt=none';
+  }
+
+  function randomState() {
+    // 128 bits of entropy, base36.
+    var a = new Uint8Array(16);
+    (window.crypto || window.msCrypto).getRandomValues(a);
+    var s = '';
+    for (var i = 0; i < a.length; i++) s += (a[i] < 16 ? '0' : '') + a[i].toString(16);
+    return s;
+  }
+
+  function startSignIn() {
+    var state = randomState();
+    sessionStorage.setItem(STATE_KEY, state);
+    location.href = buildAuthorizeUrl(state);
+  }
+
   // ─── Sign-in / sign-out ──────────────────────────────────────────────────
   elSignin.addEventListener('click', function(e) {
     e.preventDefault();
-    elSignin.textContent = 'Loading\u2026';
-    jsonp(PROXY_URL + '?api=authorize-url')
-      .then(function(j) {
-        if (j && j.url) {
-          location.href = j.url;
-        } else {
-          elSignin.textContent = 'Sign in with Discord';
-          showDenied(j && j.error === 'not-configured' ? 'not-configured' : 'oauth-error');
-        }
-      })
-      .catch(function() {
-        elSignin.textContent = 'Sign in with Discord';
-        showDenied('oauth-error');
-      });
+    startSignIn();
   });
 
   elSignout.addEventListener('click', function(e) {
     e.preventDefault();
-    sessionStorage.removeItem('sid');
+    sessionStorage.removeItem(CACHE_KEY);
+    sessionStorage.removeItem(STATE_KEY);
     location.replace(location.pathname);
   });
 
-  // ─── Session fetch ───────────────────────────────────────────────────────
-  function loadSession(sid) {
+  // ─── OAuth callback handler ──────────────────────────────────────────────
+  function handleOauthCallback(code, state) {
+    var expected = sessionStorage.getItem(STATE_KEY);
+    sessionStorage.removeItem(STATE_KEY);
+    if (!expected || expected !== state) {
+      clearQuery();
+      showDenied('oauth-state');
+      return;
+    }
+    clearQuery();
     show(elLoading);
-    jsonp(PROXY_URL + '?api=session&sid=' + encodeURIComponent(sid))
+    jsonp(PROXY_URL + '?api=oauth-exchange&code=' + encodeURIComponent(code))
       .then(function(body) {
-        if (body && !body.error) {
+        if (body && !body.error && body.sid) {
+          sessionStorage.setItem(CACHE_KEY, JSON.stringify(body));
           renderScripts(body);
         } else {
-          sessionStorage.removeItem('sid');
-          if (body && body.error) showDenied(body.error);
-          else show(elOauth);
+          showDenied((body && body.error) || 'oauth-error');
         }
       })
       .catch(function() {
-        sessionStorage.removeItem('sid');
         showDenied('oauth-error');
       });
   }
 
   // ─── Bootstrap ───────────────────────────────────────────────────────────
   function init() {
-    var hash = parseHash();
+    var q = parseQuery();
 
-    if (hash.session) {
-      sessionStorage.setItem('sid', hash.session);
-      clearHash();
-    } else if (hash.denied) {
-      sessionStorage.removeItem('sid');
-      clearHash();
-      showDenied(hash.denied);
+    if (q.code && q.state) {
+      handleOauthCallback(q.code, q.state);
       return;
     }
 
-    var sid = sessionStorage.getItem('sid');
-    if (sid) {
-      loadSession(sid);
-    } else {
-      show(elOauth);
+    var cached = sessionStorage.getItem(CACHE_KEY);
+    if (cached) {
+      try {
+        var data = JSON.parse(cached);
+        if (data && data.sid) {
+          renderScripts(data);
+          return;
+        }
+      } catch (_) { /* fall through to landing */ }
+      sessionStorage.removeItem(CACHE_KEY);
     }
+
+    show(elOauth);
   }
 
   init();
