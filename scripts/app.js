@@ -8,6 +8,26 @@
 
   var TIER_ORDER = ['probationary', 'member', 'trusted', 'owner'];
 
+  // ─── JSONP helper ────────────────────────────────────────────────────────
+  // Apps Script /exec 302-redirects through googleusercontent.com, which
+  // strips CORS headers. JSONP (response loaded as <script>) sidesteps CORS.
+  function jsonp(url) {
+    return new Promise(function(resolve, reject) {
+      var cb = '__veyra_cb_' + Math.random().toString(36).slice(2) + '_' + Date.now();
+      var script = document.createElement('script');
+      var timer = setTimeout(function() { cleanup(); reject(new Error('timeout')); }, 15000);
+      function cleanup() {
+        clearTimeout(timer);
+        try { delete window[cb]; } catch (_) { window[cb] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      }
+      window[cb] = function(data) { cleanup(); resolve(data); };
+      script.onerror = function() { cleanup(); reject(new Error('network')); };
+      script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + encodeURIComponent(cb);
+      document.head.appendChild(script);
+    });
+  }
+
   // ─── DOM refs ────────────────────────────────────────────────────────────
   var elLoading  = document.getElementById('state-loading');
   var elOauth    = document.getElementById('state-oauth');
@@ -177,8 +197,7 @@
   elSignin.addEventListener('click', function(e) {
     e.preventDefault();
     elSignin.textContent = 'Loading\u2026';
-    fetch(PROXY_URL + '?api=authorize-url', { credentials: 'omit' })
-      .then(function(r) { return r.json(); })
+    jsonp(PROXY_URL + '?api=authorize-url')
       .then(function(j) {
         if (j && j.url) {
           location.href = j.url;
@@ -202,14 +221,13 @@
   // ─── Session fetch ───────────────────────────────────────────────────────
   function loadSession(sid) {
     show(elLoading);
-    fetch(PROXY_URL + '?api=session&sid=' + encodeURIComponent(sid), { credentials: 'omit' })
-      .then(function(r) { return r.json().then(function(j) { return { status: r.status, body: j }; }); })
-      .then(function(res) {
-        if (res.status === 200 && !res.body.error) {
-          renderScripts(res.body);
+    jsonp(PROXY_URL + '?api=session&sid=' + encodeURIComponent(sid))
+      .then(function(body) {
+        if (body && !body.error) {
+          renderScripts(body);
         } else {
           sessionStorage.removeItem('sid');
-          if (res.body && res.body.error) showDenied(res.body.error);
+          if (body && body.error) showDenied(body.error);
           else show(elOauth);
         }
       })
