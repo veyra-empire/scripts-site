@@ -310,7 +310,8 @@ button:hover, .install-btn:hover {
   color: var(--muted);
   text-align: center;
 }
-.tampermonkey-hint a { color: var(--accent); }
+.tampermonkey-hint a,
+.footer-note a { color: var(--accent); }
 
 .loading-msg {
   text-align: center;
