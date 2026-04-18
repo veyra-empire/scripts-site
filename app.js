@@ -4,7 +4,7 @@
   // ─── CONFIG ──────────────────────────────────────────────────────────────
   // Apps Script web-app /exec URL. Replace with the real deployment URL.
   // (Same URL embedded in every installed script's @updateURL — not secret.)
-  var PROXY_URL = 'https://script.google.com/macros/s/REPLACE_ME/exec';
+  var PROXY_URL = 'https://script.google.com/macros/s/AKfycbzUHg1z18WmWFSyEsZStaK2kmax2JXnPzK4LrTyEitSFVBQ2u2vfFeO6wZhjWx58EJZ7w/exec';
 
   var TIER_ORDER = ['probationary', 'member', 'trusted', 'owner'];
 
