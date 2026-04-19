@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VEYRA EMPIRE - Install</title>
+  <meta name="theme-color" content="#0a0612">
+
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%230a0612'/><text x='32' y='46' font-family='Cinzel,serif' font-weight='700' font-size='44' text-anchor='middle' fill='%23f2c072'>V</text></svg>">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="overlay">
+    <div class="panel">
+
+      <section id="state-installing">
+        <h1>VEYRA EMPIRE</h1>
+        <p class="subtitle">Preparing install</p>
+        <p class="loading-msg" id="status">Working...</p>
+        <p class="tampermonkey-hint">
+          Requires <a href="https://www.tampermonkey.net/" target="_blank" rel="noopener">Tampermonkey</a>.
+          If the install dialog doesn't appear, install the extension and try again.
+        </p>
+      </section>
+
+      <section id="state-unauthenticated" hidden>
+        <div class="denied-icon">&#x26D4;</div>
+        <p class="denied-msg" id="unauth-msg">
+          This browser isn't signed in to the VEYRA EMPIRE archive.
+        </p>
+        <div style="text-align:center;">
+          <a class="install-btn" href="./">Go to archive</a>
+        </div>
+      </section>
+
+      <section id="state-expired" hidden>
+        <div class="denied-icon">&#x26D4;</div>
+        <p class="denied-msg" id="expired-msg">Your sign-in session expired. Sign in again.</p>
+        <div style="text-align:center;">
+          <a class="install-btn" href="./">Go to archive</a>
+        </div>
+      </section>
+
+    </div>
+  </div>
+  <script src="install.js"></script>
+</body>
+</html>

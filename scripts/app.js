@@ -11,8 +11,13 @@
   var REDIRECT_URI = 'https://veyra-empire.github.io/scripts/';
 
   var TIER_ORDER = ['probationary', 'member', 'trusted', 'owner'];
-  var CACHE_KEY  = 'veyra_session';       // sessionStorage key for the rendered payload
-  var STATE_KEY  = 'veyra_oauth_state';   // sessionStorage key for the CSRF state token
+  // veyra_session lives in localStorage so install.html (a separate tab)
+  // can read it when the user clicks an Install button.
+  var CACHE_KEY  = 'veyra_session';
+  // oauth_state is only used during the Discord round-trip in this tab;
+  // sessionStorage is correct so stale state from prior tabs can't
+  // accidentally validate a fresh callback.
+  var STATE_KEY  = 'veyra_oauth_state';
 
   // ─── JSONP helper ────────────────────────────────────────────────────────
   // Apps Script /exec 302-redirects through googleusercontent.com and strips
@@ -100,7 +105,6 @@
     elTier.textContent = data.tier || '';
     elTier.className = 'tier-badge tier-' + (data.tier || '');
 
-    var sid = data.sid || '';
     var scripts = data.scripts || [];
 
     if (scripts.length === 0) {
@@ -144,9 +148,11 @@
         btn.target = '_blank';
         btn.rel = 'noopener';
         btn.textContent = 'Install';
-        btn.href = PROXY_URL + '/' + encodeURIComponent(s.id) + '.user.js' +
-                   '?s=' + encodeURIComponent(s.id) +
-                   '&session=' + encodeURIComponent(sid);
+        // Pages-hosted gateway: copy-link gives a URL useless in any other
+        // browser (no localStorage.veyra_session). The real proxy URL with
+        // a single-use install token is constructed inside install.html
+        // and immediately consumed by Tampermonkey on navigation.
+        btn.href = 'install.html?s=' + encodeURIComponent(s.id);
         actions.appendChild(btn);
 
         if (s.threadUrl) {
@@ -243,7 +249,7 @@
 
   elSignout.addEventListener('click', function(e) {
     e.preventDefault();
-    sessionStorage.removeItem(CACHE_KEY);
+    localStorage.removeItem(CACHE_KEY);
     sessionStorage.removeItem(STATE_KEY);
     location.replace(location.pathname);
   });
@@ -262,7 +268,7 @@
     jsonp(PROXY_URL + '?api=oauth-exchange&code=' + encodeURIComponent(code))
       .then(function(body) {
         if (body && !body.error && body.sid) {
-          sessionStorage.setItem(CACHE_KEY, JSON.stringify(body));
+          localStorage.setItem(CACHE_KEY, JSON.stringify(body));
           renderScripts(body);
         } else {
           showDenied((body && body.error) || 'oauth-error');
@@ -282,7 +288,14 @@
       return;
     }
 
-    var cached = sessionStorage.getItem(CACHE_KEY);
+    // Migrate any pre-existing sessionStorage entry from older builds.
+    var legacy = sessionStorage.getItem(CACHE_KEY);
+    if (legacy && !localStorage.getItem(CACHE_KEY)) {
+      localStorage.setItem(CACHE_KEY, legacy);
+    }
+    sessionStorage.removeItem(CACHE_KEY);
+
+    var cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
       try {
         var data = JSON.parse(cached);
@@ -291,7 +304,7 @@
           return;
         }
       } catch (_) { /* fall through to landing */ }
-      sessionStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(CACHE_KEY);
     }
 
     show(elOauth);

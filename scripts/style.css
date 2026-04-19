@@ -349,6 +349,19 @@ button:hover, .install-btn:hover {
   letter-spacing: 0.04em;
 }
 
+.tm-banner {
+  margin: 0 0 18px;
+  padding: 10px 14px;
+  background: rgba(242, 192, 114, 0.08);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text);
+  text-align: center;
+}
+.tm-banner a { color: var(--accent); }
+
 .loading-msg {
   text-align: center;
   color: var(--muted);
