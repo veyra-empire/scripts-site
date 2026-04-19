@@ -206,16 +206,18 @@
 
   /**
    * Format a rate-limited error response using the counts returned by the
-   * server. Leads with the blocking reason (open PR / daily / weekly) and
-   * always reports both usage counts so the submitter can see exactly
-   * where they stand.
+   * server. Leads with the blocking reason (open-slots full / daily /
+   * weekly) and always reports usage counts so the submitter can see
+   * exactly where they stand.
    */
   function rateLimitMessage(detail) {
     if (!detail) return 'Rate limited. Try again later.';
+    var openCount = detail.openCount || 0;
+    var openLimit = detail.openLimit || 3;
     var pieces = [];
-    if (detail.openPr) {
-      pieces.push('You have an open submission (PR #' + detail.openPr +
-                  ') pending review. Cancel it below to submit again.');
+    if (openCount >= openLimit) {
+      pieces.push('You have ' + openCount + '/' + openLimit +
+                  ' submissions pending review. Cancel one above to submit something new.');
     } else if (detail.daily >= detail.dailyLimit) {
       pieces.push('You\'ve hit today\'s submission limit. Try again tomorrow.');
     } else if (detail.weekly >= detail.weeklyLimit) {
@@ -239,46 +241,118 @@
   }
 
   /**
-   * Render the open-PR cancel banner at the top of the form. `openPr` is
-   * null (hide) or a PR number (show). Wires the cancel button click to
-   * POST api=cancel-submission and reload on success.
+   * Render the list of open PRs at the top of the form, one row per PR
+   * with an individual cancel button. `list` is an array of {pr, title}.
+   * Empty array hides the section.
    */
-  function renderCancelBanner(openPr) {
-    var banner = document.getElementById('cancel-banner');
-    if (!banner) return;
-    if (!openPr) { banner.hidden = true; return; }
-    banner.hidden = false;
-    document.getElementById('cancel-banner-pr').textContent = '#' + openPr;
-    var btn = document.getElementById('cancel-banner-btn');
-    btn.disabled = false;
-    btn.onclick = function() {
-      btn.disabled = true;
-      btn.textContent = 'Cancelling...';
-      fetch(PROXY_URL, {
-        method:  'POST',
-        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-        body:    JSON.stringify({ api: 'cancel-submission', sid: session.sid }),
-        credentials: 'omit'
-      })
-        .then(function(r) { return r.text().then(function(t) {
-          try { return JSON.parse(t); } catch (_) { return { error: 'server-error' }; }
-        }); })
-        .then(function(data) {
-          if (data && data.ok) {
-            // Re-fetch my-scripts to refresh status + owned list.
-            location.reload();
-          } else {
-            btn.disabled = false;
-            btn.textContent = 'Cancel submission';
-            showError('Cancel failed: ' + (data && data.error || 'unknown'));
-          }
-        })
-        .catch(function() {
+  function renderOpenSubmissions(list, openLimit) {
+    var section = document.getElementById('open-submissions');
+    if (!section) return;
+    if (!list || !list.length) { section.hidden = true; return; }
+
+    section.hidden = false;
+    var countEl = document.getElementById('open-submissions-count');
+    countEl.textContent = '(' + list.length + '/' + (openLimit || 3) + ')';
+
+    var ul = document.getElementById('open-submissions-list');
+    ul.innerHTML = '';
+    list.forEach(function(entry) {
+      var li = document.createElement('li');
+      li.className = 'open-submissions-item';
+
+      var label = document.createElement('span');
+      label.className = 'open-submissions-label';
+      var strong = document.createElement('strong');
+      strong.textContent = 'PR #' + entry.pr;
+      label.appendChild(strong);
+      label.appendChild(document.createTextNode(' ' + (entry.title || '')));
+
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cancel-banner-btn';
+      btn.textContent = 'Cancel';
+      btn.addEventListener('click', function() { cancelSubmission(entry.pr, btn); });
+
+      li.appendChild(label);
+      li.appendChild(btn);
+      ul.appendChild(li);
+    });
+  }
+
+  function cancelSubmission(prNumber, btn) {
+    btn.disabled = true;
+    btn.textContent = 'Cancelling...';
+    fetch(PROXY_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body:    JSON.stringify({ api: 'cancel-submission', sid: session.sid, pr: prNumber }),
+      credentials: 'omit'
+    })
+      .then(function(r) { return r.text().then(function(t) {
+        try { return JSON.parse(t); } catch (_) { return { error: 'server-error' }; }
+      }); })
+      .then(function(data) {
+        if (data && data.ok) {
+          // Stash a toast to show after reload (reload refreshes the
+          // open-list + quota so the UI is coherent).
+          stashPendingToast({ type: 'info', message: 'Cancelled PR #' + prNumber + '.' });
+          location.reload();
+        } else {
           btn.disabled = false;
-          btn.textContent = 'Cancel submission';
-          showError('Network error cancelling submission. Try again.');
-        });
-    };
+          btn.textContent = 'Cancel';
+          toast('error', 'Cancel failed: ' + (data && data.error || 'unknown'));
+        }
+      })
+      .catch(function() {
+        btn.disabled = false;
+        btn.textContent = 'Cancel';
+        toast('error', 'Network error cancelling submission. Try again.');
+      });
+  }
+
+  // ─── Toasts ───────────────────────────────────────────────────────────────
+  // Lightweight non-blocking notifications. Used for cancel-success (after
+  // reload, via sessionStorage handoff) and submit failures.
+
+  var TOAST_TTL_MS = 6000;
+  var TOAST_KEY    = 'veyra_submit_toast';
+
+  function toast(type, message) {
+    var container = document.getElementById('toast-container');
+    if (!container) return;
+    var el = document.createElement('div');
+    el.className = 'toast toast-' + (type || 'info');
+    el.textContent = message;
+    el.addEventListener('click', function() { dismissToast(el); });
+    container.appendChild(el);
+    // Allow the browser to paint before adding the `show` class so the
+    // CSS transition actually animates.
+    requestAnimationFrame(function() { el.classList.add('show'); });
+    setTimeout(function() { dismissToast(el); }, TOAST_TTL_MS);
+  }
+
+  function dismissToast(el) {
+    if (!el || !el.parentNode) return;
+    el.classList.remove('show');
+    // Wait for the transition to finish before removing from DOM.
+    setTimeout(function() {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, 300);
+  }
+
+  function stashPendingToast(t) {
+    try { sessionStorage.setItem(TOAST_KEY, JSON.stringify(t)); } catch (_) {}
+  }
+
+  function flushPendingToast() {
+    var raw;
+    try { raw = sessionStorage.getItem(TOAST_KEY); sessionStorage.removeItem(TOAST_KEY); }
+    catch (_) { return; }
+    if (!raw) return;
+    try {
+      var t = JSON.parse(raw);
+      if (t && t.message) toast(t.type || 'info', t.message);
+    } catch (_) { /* ignore */ }
   }
 
   // ─── Submit handler ───────────────────────────────────────────────────────
@@ -342,25 +416,31 @@
           var msg;
           if (err === 'rate-limited') {
             msg = rateLimitMessage(data.detail);
-            // If there's an open PR, make sure the cancel banner is visible.
-            if (data.detail && data.detail.openPr) renderCancelBanner(data.detail.openPr);
+            // Keep the open-submissions list in sync with the server state.
+            if (data.detail) {
+              renderOpenSubmissions(data.detail.openPrs || [], data.detail.openLimit);
+            }
           } else {
             msg = ERROR_MESSAGES[err] ||
                   ('Submission failed' + (data && data.detail ? ': ' + JSON.stringify(data.detail) : '.'));
           }
           showError(msg);
+          toast('error', msg);
         }
       })
       .catch(function(err) {
         show('state-form');
-        showError('Network error submitting: ' + (err && err.message || err) +
-                  '. (If this persists, your browser may be blocking the request - try another browser or contact lmv.)');
+        var msg = 'Network error submitting: ' + (err && err.message || err) +
+                  '. (If this persists, your browser may be blocking the request - try another browser or contact lmv.)';
+        showError(msg);
+        toast('error', msg);
       });
   }
 
   // ─── Init ─────────────────────────────────────────────────────────────────
   function init() {
     bindRefs();
+    flushPendingToast();
 
     session = getSession();
     if (!session || !session.sid) { show('state-unauthenticated'); return; }
@@ -392,8 +472,10 @@
             idUpdate.appendChild(opt);
           });
         }
-        // Render the cancel banner at form load if an open submission is pending.
-        if (res && res.status && res.status.openPr) renderCancelBanner(res.status.openPr);
+        // Render the open-submissions list at form load.
+        if (res && res.status) {
+          renderOpenSubmissions(res.status.openPrs || [], res.status.openLimit);
+        }
         show('state-form');
         wireForm();
       })

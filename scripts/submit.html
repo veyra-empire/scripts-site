@@ -15,6 +15,8 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
   <div class="overlay">
     <div class="panel panel-wide">
 
@@ -42,16 +44,15 @@
         <p class="trust-notice">
           <strong>Submissions are reviewed.</strong>
           Your script opens a pull request assigned to lmv; it won't appear in the archive until reviewed and merged.
-          Rate-limited to one open submission at a time, 20 per day, 100 per week.
+          Up to 3 open submissions at a time, 20 per day, 100 per week.
         </p>
 
-        <div id="cancel-banner" class="cancel-banner" hidden>
-          <div>
-            <strong>Open submission pending</strong>
-            (PR <span id="cancel-banner-pr"></span>).
-            To submit something else, cancel it here.
+        <div id="open-submissions" class="open-submissions" hidden>
+          <div class="open-submissions-header">
+            <strong>Open submissions pending review</strong>
+            <span id="open-submissions-count" class="open-submissions-count"></span>
           </div>
-          <button type="button" id="cancel-banner-btn" class="cancel-banner-btn">Cancel submission</button>
+          <ul id="open-submissions-list" class="open-submissions-list"></ul>
         </div>
 
         <form id="submit-form" novalidate>
