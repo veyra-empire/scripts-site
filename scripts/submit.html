@@ -68,6 +68,10 @@
                 <input type="radio" name="mode" value="update">
                 <span>Update existing</span>
               </label>
+              <label class="mode-option" id="mode-delete-label">
+                <input type="radio" name="mode" value="delete">
+                <span>Delete one of yours</span>
+              </label>
             </div>
           </div>
 
@@ -86,22 +90,43 @@
             <p class="form-hint">Only scripts you own are listed.</p>
           </div>
 
-          <div class="form-row">
+          <div class="form-row" id="id-delete-row" hidden>
+            <label class="form-label" for="id-delete">Script to delete</label>
+            <select id="id-delete" class="form-input">
+              <option value="">(no scripts owned)</option>
+            </select>
+            <p class="form-hint">Only scripts you own are listed. Deletion opens a PR for lmv to review.</p>
+          </div>
+
+          <div class="form-row delete-only" id="delete-name-row" hidden>
+            <label class="form-label" for="field-submitter-name">Your name</label>
+            <input type="text" id="field-submitter-name" class="form-input" maxlength="120">
+            <p class="form-hint">Shown on the review PR so lmv knows who requested the deletion.</p>
+          </div>
+
+          <div class="form-row delete-only" id="delete-reason-row" hidden>
+            <label class="form-label" for="field-reason">Reason for deletion</label>
+            <textarea id="field-reason" class="form-input" rows="4" maxlength="2000"
+                      placeholder="At least 10 characters. Why should this script be removed?"></textarea>
+            <p class="form-hint">Minimum 10 characters. Maximum 2000.</p>
+          </div>
+
+          <div class="form-row submit-only">
             <label class="form-label" for="field-name">Display name <span class="form-optional">(optional)</span></label>
             <input type="text" id="field-name" class="form-input" placeholder="Falls back to @name in the header">
           </div>
 
-          <div class="form-row">
+          <div class="form-row submit-only">
             <label class="form-label" for="field-author">Author <span class="form-optional">(optional)</span></label>
             <input type="text" id="field-author" class="form-input" placeholder="Defaults to your Discord handle">
           </div>
 
-          <div class="form-row">
+          <div class="form-row submit-only">
             <label class="form-label" for="field-description">Description <span class="form-optional">(optional)</span></label>
             <input type="text" id="field-description" class="form-input" placeholder="Falls back to @description in the header">
           </div>
 
-          <div class="form-row">
+          <div class="form-row submit-only">
             <label class="form-label" for="field-min-tier">Min tier</label>
             <select id="field-min-tier" class="form-input" required>
               <option value="probationary">probationary</option>
@@ -111,14 +136,14 @@
             <p class="form-hint">lmv may change this during review.</p>
           </div>
 
-          <div class="form-row">
+          <div class="form-row submit-only">
             <label class="form-label" for="field-thread">Discussion thread <span class="form-optional">(optional)</span></label>
             <input type="url" id="field-thread" class="form-input"
                    placeholder="https://discord.com/channels/...">
             <p class="form-hint">Must be https://. Shown as a "Discussion -&gt;" link on the script card.</p>
           </div>
 
-          <div class="form-row">
+          <div class="form-row submit-only">
             <label class="form-label" for="field-screenshot">Screenshot <span class="form-optional">(optional)</span></label>
             <input type="file" id="field-screenshot" class="form-input form-file"
                    accept="image/png,image/jpeg,image/webp">
@@ -129,18 +154,25 @@
             <p class="form-hint">PNG, JPEG, or WebP. Max 2 MB. Displays as an expandable thumbnail on the script card.</p>
           </div>
 
-          <div class="form-row">
+          <div class="form-row submit-only">
             <label class="form-label" for="field-source">Script source</label>
             <textarea id="field-source" class="form-input form-source"
-                      rows="10" spellcheck="false" required
+                      rows="10" spellcheck="false"
                       placeholder="Drop a .user.js file here, or paste the full source. Must include a // ==UserScript== block with @name and @version."></textarea>
             <p class="form-hint" id="source-hint">Max 3 MB.</p>
           </div>
 
-          <div class="form-row">
+          <div class="form-row submit-only">
             <label class="attest">
-              <input type="checkbox" id="field-attest" required>
+              <input type="checkbox" id="field-attest">
               <span>I'm not redistributing someone else's work without permission.</span>
+            </label>
+          </div>
+
+          <div class="form-row delete-only" id="delete-attest-row" hidden>
+            <label class="attest">
+              <input type="checkbox" id="field-delete-attest">
+              <span>I understand this will remove the script from the archive permanently (pending lmv's review).</span>
             </label>
           </div>
 

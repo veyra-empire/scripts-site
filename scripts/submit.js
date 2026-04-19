@@ -60,19 +60,26 @@
   var session = null;
   var ownedScripts = [];  // [{id, name, description, minTier, threadUrl}, ...]
   var pendingScreenshot = null;  // { mimeType, base64 } or null
-  var form, modeInputs, idNewRow, idUpdateRow, idNew, idUpdate;
+  var form, modeInputs;
+  var idNewRow, idUpdateRow, idDeleteRow, idNew, idUpdate, idDelete;
   var fieldName, fieldAuthor, fieldDescription, fieldMinTier, fieldThread, fieldSource, fieldAttest;
   var fieldScreenshot, screenshotPreview, screenshotPreviewImg, screenshotClearBtn;
-  var submitBtn, formError, sourceHint, modeUpdateLabel;
+  var fieldSubmitterName, fieldReason, fieldDeleteAttest;
+  var deleteNameRow, deleteReasonRow, deleteAttestRow;
+  var submitBtn, formError, sourceHint, modeUpdateLabel, modeDeleteLabel;
+  var submitOnlyRows, deleteOnlyRows;
 
   function bindRefs() {
     form             = document.getElementById('submit-form');
     modeInputs       = Array.prototype.slice.call(form.querySelectorAll('input[name="mode"]'));
     modeUpdateLabel  = document.getElementById('mode-update-label');
+    modeDeleteLabel  = document.getElementById('mode-delete-label');
     idNewRow         = document.getElementById('id-new-row');
     idUpdateRow      = document.getElementById('id-update-row');
+    idDeleteRow      = document.getElementById('id-delete-row');
     idNew            = document.getElementById('id-new');
     idUpdate         = document.getElementById('id-update');
+    idDelete         = document.getElementById('id-delete');
     fieldName        = document.getElementById('field-name');
     fieldAuthor      = document.getElementById('field-author');
     fieldDescription = document.getElementById('field-description');
@@ -84,9 +91,17 @@
     screenshotPreview     = document.getElementById('screenshot-preview');
     screenshotPreviewImg  = document.getElementById('screenshot-preview-img');
     screenshotClearBtn    = document.getElementById('screenshot-clear');
+    fieldSubmitterName = document.getElementById('field-submitter-name');
+    fieldReason        = document.getElementById('field-reason');
+    fieldDeleteAttest  = document.getElementById('field-delete-attest');
+    deleteNameRow      = document.getElementById('delete-name-row');
+    deleteReasonRow    = document.getElementById('delete-reason-row');
+    deleteAttestRow    = document.getElementById('delete-attest-row');
     submitBtn        = document.getElementById('submit-btn');
     formError        = document.getElementById('form-error');
     sourceHint       = document.getElementById('source-hint');
+    submitOnlyRows   = Array.prototype.slice.call(form.querySelectorAll('.submit-only'));
+    deleteOnlyRows   = Array.prototype.slice.call(form.querySelectorAll('.delete-only'));
   }
 
   // ─── Mode switching ───────────────────────────────────────────────────────
@@ -99,11 +114,22 @@
     var mode = currentMode();
     idNewRow.hidden    = mode !== 'new';
     idUpdateRow.hidden = mode !== 'update';
-    if (mode === 'update') {
-      // Pre-fill from the selected script if one is selected.
-      prefillFromSelectedUpdate();
-    }
+    idDeleteRow.hidden = mode !== 'delete';
+
+    // Show submit-only rows (source/screenshot/etc) only for new/update; show
+    // delete-only rows (name/reason/delete-attest) only for delete.
+    var showSubmit = mode !== 'delete';
+    submitOnlyRows.forEach(function(el) { el.hidden = !showSubmit; });
+    deleteOnlyRows.forEach(function(el) { el.hidden = showSubmit; });
+
+    if (mode === 'update') prefillFromSelectedUpdate();
+    updateSubmitBtnLabel();
     updateSubmitEnabled();
+  }
+
+  function updateSubmitBtnLabel() {
+    var mode = currentMode();
+    submitBtn.textContent = mode === 'delete' ? 'Submit deletion request' : 'Submit';
   }
 
   function prefillFromSelectedUpdate() {
@@ -225,11 +251,23 @@
   // ─── Submit enablement ────────────────────────────────────────────────────
   function updateSubmitEnabled() {
     var mode = currentMode();
-    var idOk = mode === 'new'
-      ? /^[a-z0-9][a-z0-9-]{1,48}$/.test(idNew.value)
-      : !!idUpdate.value;
-    var sourceOk = fieldSource.value.length > 0 && fieldSource.value.length <= MAX_BYTES;
-    var attestOk = fieldAttest.checked;
+    var idOk, sourceOk, attestOk;
+    if (mode === 'new') {
+      idOk     = /^[a-z0-9][a-z0-9-]{1,48}$/.test(idNew.value);
+      sourceOk = fieldSource.value.length > 0 && fieldSource.value.length <= MAX_BYTES;
+      attestOk = fieldAttest.checked;
+    } else if (mode === 'update') {
+      idOk     = !!idUpdate.value;
+      sourceOk = fieldSource.value.length > 0 && fieldSource.value.length <= MAX_BYTES;
+      attestOk = fieldAttest.checked;
+    } else {
+      // delete
+      idOk     = !!idDelete.value;
+      sourceOk = true;  // no source needed
+      attestOk = fieldDeleteAttest.checked &&
+                 fieldSubmitterName.value.trim().length > 0 &&
+                 fieldReason.value.trim().length >= 10;
+    }
     submitBtn.disabled = !(idOk && sourceOk && attestOk);
   }
 
@@ -245,6 +283,9 @@
     'invalid-min-tier':   'Min tier must be probationary, member, or trusted.',
     'invalid-thread-url': 'Thread URL must start with https://',
     'too-large':          'Script exceeds the 3 MB limit.',
+    'missing-name':       'Please provide your name for the deletion request.',
+    'missing-reason':     'Please explain why this script should be deleted (at least 10 characters).',
+    'reason-too-long':    'Reason is too long (2000 character limit).',
     'invalid-screenshot':        'Screenshot file is invalid or empty.',
     'invalid-screenshot-type':   'Screenshot must be PNG, JPEG, or WebP.',
     'screenshot-too-large':      'Screenshot exceeds the 2 MB limit.',
@@ -414,8 +455,29 @@
     if (!session) { show('state-unauthenticated'); return; }
 
     var mode = currentMode();
-    var id = mode === 'new' ? idNew.value.trim() : idUpdate.value.trim();
+    var id;
+    if (mode === 'new')         id = idNew.value.trim();
+    else if (mode === 'update') id = idUpdate.value.trim();
+    else                        id = idDelete.value.trim();
     if (!id) { showError('Pick a script ID.'); return; }
+
+    if (mode === 'delete') {
+      var submitterName = fieldSubmitterName.value.trim();
+      var reason = fieldReason.value.trim();
+      if (!submitterName) { showError('Enter your name for the deletion request.'); return; }
+      if (reason.length < 10) { showError('Reason must be at least 10 characters.'); return; }
+      if (!fieldDeleteAttest.checked) { showError('You must confirm the deletion is intentional.'); return; }
+      show('state-submitting');
+      sendSubmit({
+        api:           'submit-script',
+        sid:           session.sid,
+        mode:          'delete',
+        id:            id,
+        submitterName: submitterName,
+        reason:        reason
+      });
+      return;
+    }
 
     var source = fieldSource.value;
     if (!source) { showError('Paste or drop the script source.'); return; }
@@ -437,7 +499,10 @@
     };
 
     show('state-submitting');
+    sendSubmit(body);
+  }
 
+  function sendSubmit(body) {
     fetch(PROXY_URL, {
       method:  'POST',
       headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
@@ -445,8 +510,6 @@
       credentials: 'omit'
     })
       .then(function(r) {
-        // Apps Script ContentService responses should include ACAO:* so we
-        // can read the body. If CORS blocks reading, this throws.
         return r.text().then(function(t) {
           try { return JSON.parse(t); }
           catch (_) { return { error: 'server-error', detail: 'Non-JSON response' }; }
@@ -454,13 +517,18 @@
       })
       .then(function(data) {
         if (data && data.prNumber) {
-          var titleEl = document.getElementById('success-title');
+          var titleEl  = document.getElementById('success-title');
           var detailEl = document.getElementById('success-detail');
-          titleEl.textContent = data.mode === 'update'
-            ? 'Your update was submitted.'
-            : 'Your script was submitted.';
+          var modeLabel;
+          if (data.mode === 'delete')     modeLabel = 'Your deletion request was submitted.';
+          else if (data.mode === 'update') modeLabel = 'Your update was submitted.';
+          else                             modeLabel = 'Your script was submitted.';
+          titleEl.textContent = modeLabel;
           detailEl.textContent = 'PR #' + data.prNumber +
-            ' - lmv will review within a day or two. If accepted, the archive will show it after merge.';
+            ' - lmv will review within a day or two. ' +
+            (data.mode === 'delete'
+              ? 'Once merged, the script is removed from the archive.'
+              : 'If accepted, the archive will show it after merge.');
           show('state-success');
         } else {
           show('state-form');
@@ -468,7 +536,6 @@
           var msg;
           if (err === 'rate-limited') {
             msg = rateLimitMessage(data.detail);
-            // Keep the open-submissions list in sync with the server state.
             if (data.detail) {
               renderOpenSubmissions(data.detail.openPrs || [], data.detail.openLimit);
             }
@@ -510,18 +577,22 @@
         if (!ownedScripts.length) {
           modeUpdateLabel.classList.add('disabled');
           modeUpdateLabel.querySelector('input').disabled = true;
+          modeDeleteLabel.classList.add('disabled');
+          modeDeleteLabel.querySelector('input').disabled = true;
         } else {
-          // Populate the update-mode dropdown.
-          idUpdate.innerHTML = '';
-          var first = document.createElement('option');
-          first.value = '';
-          first.textContent = '-- select --';
-          idUpdate.appendChild(first);
-          ownedScripts.forEach(function(s) {
-            var opt = document.createElement('option');
-            opt.value = s.id;
-            opt.textContent = s.name + '  (' + s.id + ')';
-            idUpdate.appendChild(opt);
+          // Populate the update-mode and delete-mode dropdowns.
+          [idUpdate, idDelete].forEach(function(sel) {
+            sel.innerHTML = '';
+            var first = document.createElement('option');
+            first.value = '';
+            first.textContent = '-- select --';
+            sel.appendChild(first);
+            ownedScripts.forEach(function(s) {
+              var opt = document.createElement('option');
+              opt.value = s.id;
+              opt.textContent = s.name + '  (' + s.id + ')';
+              sel.appendChild(opt);
+            });
           });
         }
         // Render the open-submissions list at form load.
@@ -535,6 +606,8 @@
         // Still allow submission in new mode even if my-scripts fails.
         modeUpdateLabel.classList.add('disabled');
         modeUpdateLabel.querySelector('input').disabled = true;
+        modeDeleteLabel.classList.add('disabled');
+        modeDeleteLabel.querySelector('input').disabled = true;
         show('state-form');
         wireForm();
       });
@@ -550,6 +623,12 @@
       prefillFromSelectedUpdate();
       updateSubmitEnabled();
     });
+
+    // Delete-mode input handlers
+    idDelete.addEventListener('change', updateSubmitEnabled);
+    fieldSubmitterName.addEventListener('input', updateSubmitEnabled);
+    fieldReason.addEventListener('input', updateSubmitEnabled);
+    fieldDeleteAttest.addEventListener('change', updateSubmitEnabled);
 
     // Source auto-fill
     fieldSource.addEventListener('input', function() {
