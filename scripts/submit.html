@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VEYRA EMPIRE - Submit a script</title>
+  <meta name="description" content="Submit a userscript to the VEYRA EMPIRE script archive.">
+  <meta name="theme-color" content="#0a0612">
+
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%230a0612'/><text x='32' y='46' font-family='Cinzel,serif' font-weight='700' font-size='44' text-anchor='middle' fill='%23f2c072'>V</text></svg>">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="overlay">
+    <div class="panel panel-wide">
+
+      <section id="state-loading">
+        <h1>VEYRA EMPIRE</h1>
+        <p class="subtitle">Submit a script</p>
+        <p class="loading-msg">Loading&hellip;</p>
+      </section>
+
+      <section id="state-unauthenticated" hidden>
+        <h1>VEYRA EMPIRE</h1>
+        <p class="subtitle">Submit a script</p>
+        <p class="denied-msg">
+          You need to sign in first.
+        </p>
+        <div style="text-align:center;">
+          <a class="install-btn" href="./">Go to archive</a>
+        </div>
+      </section>
+
+      <section id="state-form" hidden>
+        <h1>VEYRA EMPIRE</h1>
+        <p class="subtitle">Submit a script</p>
+
+        <p class="trust-notice">
+          <strong>Submissions are reviewed.</strong>
+          Your script opens a pull request assigned to lmv; it won't appear in the archive until reviewed and merged.
+          Rate-limited to one open submission at a time, 5 per day, 15 per week.
+        </p>
+
+        <form id="submit-form" novalidate>
+
+          <div class="form-row mode-row" id="mode-row">
+            <label class="form-label">Mode</label>
+            <div class="mode-options">
+              <label class="mode-option">
+                <input type="radio" name="mode" value="new" checked>
+                <span>New script</span>
+              </label>
+              <label class="mode-option" id="mode-update-label">
+                <input type="radio" name="mode" value="update">
+                <span>Update existing</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-row" id="id-new-row">
+            <label class="form-label" for="id-new">Script ID</label>
+            <input type="text" id="id-new" class="form-input" placeholder="e.g. crystals-swap"
+                   autocomplete="off" spellcheck="false" required>
+            <p class="form-hint">Lowercase letters, digits, hyphens. This becomes the manifest key and the install URL slug.</p>
+          </div>
+
+          <div class="form-row" id="id-update-row" hidden>
+            <label class="form-label" for="id-update">Script to update</label>
+            <select id="id-update" class="form-input">
+              <option value="">(no scripts owned)</option>
+            </select>
+            <p class="form-hint">Only scripts you own are listed.</p>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label" for="field-name">Display name <span class="form-optional">(optional)</span></label>
+            <input type="text" id="field-name" class="form-input" placeholder="Falls back to @name in the header">
+          </div>
+
+          <div class="form-row">
+            <label class="form-label" for="field-author">Author <span class="form-optional">(optional)</span></label>
+            <input type="text" id="field-author" class="form-input" placeholder="Defaults to your Discord handle">
+          </div>
+
+          <div class="form-row">
+            <label class="form-label" for="field-description">Description <span class="form-optional">(optional)</span></label>
+            <input type="text" id="field-description" class="form-input" placeholder="Falls back to @description in the header">
+          </div>
+
+          <div class="form-row">
+            <label class="form-label" for="field-min-tier">Min tier</label>
+            <select id="field-min-tier" class="form-input" required>
+              <option value="probationary">probationary</option>
+              <option value="member" selected>member</option>
+              <option value="trusted">trusted</option>
+            </select>
+            <p class="form-hint">lmv may change this during review.</p>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label" for="field-thread">Discussion thread <span class="form-optional">(optional)</span></label>
+            <input type="url" id="field-thread" class="form-input"
+                   placeholder="https://discord.com/channels/...">
+            <p class="form-hint">Must be https://. Shown as a "Discussion -&gt;" link on the script card.</p>
+          </div>
+
+          <div class="form-row">
+            <label class="form-label" for="field-source">Script source</label>
+            <textarea id="field-source" class="form-input form-source"
+                      rows="10" spellcheck="false" required
+                      placeholder="Drop a .user.js file here, or paste the full source. Must include a // ==UserScript== block with @name and @version."></textarea>
+            <p class="form-hint" id="source-hint">Max 2 MB.</p>
+          </div>
+
+          <div class="form-row">
+            <label class="attest">
+              <input type="checkbox" id="field-attest" required>
+              <span>I'm not redistributing someone else's work without permission.</span>
+            </label>
+          </div>
+
+          <div class="form-row form-actions">
+            <button type="submit" id="submit-btn" class="install-btn" disabled>Submit</button>
+            <a class="back-link" href="./">Cancel</a>
+          </div>
+
+          <p id="form-error" class="form-error" hidden></p>
+        </form>
+      </section>
+
+      <section id="state-submitting" hidden>
+        <h1>VEYRA EMPIRE</h1>
+        <p class="subtitle">Submitting&hellip;</p>
+        <p class="loading-msg">Opening a pull request. This takes a few seconds.</p>
+      </section>
+
+      <section id="state-success" hidden>
+        <h1>VEYRA EMPIRE</h1>
+        <p class="subtitle">Submitted</p>
+        <p class="denied-msg" style="color: var(--text);">
+          <strong id="success-title">Your script was submitted.</strong><br>
+          <span id="success-detail">lmv will review it within a day or two. If accepted, the archive will show it after merge.</span>
+        </p>
+        <div style="text-align:center;">
+          <a class="install-btn" href="./">Back to archive</a>
+        </div>
+      </section>
+
+    </div>
+  </div>
+  <script src="submit.js"></script>
+</body>
+</html>

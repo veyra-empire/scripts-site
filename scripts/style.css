@@ -362,6 +362,121 @@ button:hover, .install-btn:hover {
 }
 .tm-banner a { color: var(--accent); }
 
+/* Submission form (submit.html) */
+.panel-wide { max-width: 820px; }
+
+.form-row {
+  margin-bottom: 16px;
+}
+.form-label {
+  display: block;
+  font-family: 'Cinzel', serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.form-optional {
+  font-family: inherit;
+  font-size: 0.75rem;
+  letter-spacing: normal;
+  text-transform: none;
+  color: rgba(184, 172, 148, 0.6);
+  margin-left: 6px;
+}
+.form-hint {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.form-input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+}
+.form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.form-source {
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
+  font-size: 0.82rem;
+  resize: vertical;
+  min-height: 180px;
+}
+.form-source.drag-over {
+  border-color: var(--accent);
+  background: rgba(242, 192, 114, 0.06);
+}
+
+.mode-row { display: flex; flex-direction: column; }
+.mode-options { display: flex; gap: 14px; flex-wrap: wrap; }
+.mode-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.mode-option input { margin: 0; }
+.mode-option.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.attest {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+}
+.attest input { margin: 3px 0 0; flex-shrink: 0; }
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+.form-actions .install-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+.form-actions .install-btn:disabled:hover {
+  background: var(--accent);
+}
+
+.form-error {
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: rgba(224, 123, 123, 0.08);
+  border: 1px solid rgba(224, 123, 123, 0.4);
+  border-radius: 8px;
+  color: var(--danger);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
 .loading-msg {
   text-align: center;
   color: var(--muted);
