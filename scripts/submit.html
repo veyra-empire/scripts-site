@@ -136,6 +136,17 @@
             <p class="form-hint">lmv may change this during review.</p>
           </div>
 
+          <div class="form-row submit-only">
+            <label class="attest">
+              <input type="checkbox" id="field-requires-auth">
+              <span>Require archive sign-in to run this script</span>
+            </label>
+            <p class="form-hint">
+              Turns the script into a stub for anyone not signed into the archive, or whose tier is below the minimum.
+              Use for sensitive scripts where leaks are costly. Default: off.
+            </p>
+          </div>
+
           <div class="form-row update-only" id="update-version-row" hidden>
             <label class="form-label" for="field-version">Version</label>
             <div class="version-row">

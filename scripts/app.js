@@ -270,6 +270,9 @@
   elSignout.addEventListener('click', function(e) {
     e.preventDefault();
     localStorage.removeItem(CACHE_KEY);
+    // Clear the long-lived fingerprint marker too. Auth-required scripts on
+    // game pages will block until the user signs in again.
+    localStorage.removeItem('veyra_fingerprint');
     sessionStorage.removeItem(STATE_KEY);
     location.replace(location.pathname);
   });
@@ -289,6 +292,17 @@
       .then(function(body) {
         if (body && !body.error && body.sid) {
           localStorage.setItem(CACHE_KEY, JSON.stringify(body));
+          // Long-lived fingerprint marker - consumed by the auth bootstrap
+          // inside requiresAuth scripts. Permanent until explicit sign-out.
+          if (body.discordId && body.fingerprintSig && body.signedAt) {
+            try {
+              localStorage.setItem('veyra_fingerprint', JSON.stringify({
+                discordId: body.discordId,
+                sig:       body.fingerprintSig,
+                signedAt:  body.signedAt
+              }));
+            } catch (_) { /* quota or storage disabled; bootstrap will fall through to signin-needed */ }
+          }
           renderScripts(body);
         } else {
           showDenied((body && body.error) || 'oauth-error');

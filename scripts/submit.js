@@ -62,7 +62,7 @@
   var pendingScreenshot = null;  // { mimeType, base64 } or null
   var form, modeInputs;
   var idNewRow, idUpdateRow, idDeleteRow, idNew, idUpdate, idDelete;
-  var fieldName, fieldAuthor, fieldDescription, fieldMinTier, fieldThread, fieldSource, fieldAttest;
+  var fieldName, fieldAuthor, fieldDescription, fieldMinTier, fieldThread, fieldSource, fieldAttest, fieldRequiresAuth;
   var fieldScreenshot, screenshotPreview, screenshotPreviewImg, screenshotClearBtn;
   var fieldSubmitterName, fieldReason, fieldDeleteAttest;
   var deleteNameRow, deleteReasonRow, deleteAttestRow;
@@ -89,6 +89,7 @@
     fieldThread      = document.getElementById('field-thread');
     fieldSource      = document.getElementById('field-source');
     fieldAttest      = document.getElementById('field-attest');
+    fieldRequiresAuth = document.getElementById('field-requires-auth');
     fieldScreenshot       = document.getElementById('field-screenshot');
     screenshotPreview     = document.getElementById('screenshot-preview');
     screenshotPreviewImg  = document.getElementById('screenshot-preview-img');
@@ -156,6 +157,9 @@
     if (!fieldDescription.value) fieldDescription.value = s.description || '';
     if (!fieldThread.value)      fieldThread.value      = s.threadUrl || '';
     if (s.minTier) fieldMinTier.value = s.minTier;
+    // Prefill the auth flag from the script's current state. Submitter can
+    // toggle if they want to change it as part of this update.
+    if (fieldRequiresAuth) fieldRequiresAuth.checked = s.requiresAuth === true;
     updateVersionWarning();
   }
 
@@ -584,17 +588,20 @@
     if (!fieldAttest.checked) { showError('You must confirm the attestation.'); return; }
 
     var body = {
-      api:         'submit-script',
-      sid:         session.sid,
-      mode:        mode,
-      id:          id,
-      name:        fieldName.value.trim()        || undefined,
-      author:      fieldAuthor.value.trim()      || undefined,
-      description: fieldDescription.value.trim() || undefined,
-      minTier:     fieldMinTier.value,
-      threadUrl:   fieldThread.value.trim()      || undefined,
-      source:      source,
-      screenshot:  pendingScreenshot              || undefined
+      api:          'submit-script',
+      sid:          session.sid,
+      mode:         mode,
+      id:           id,
+      name:         fieldName.value.trim()        || undefined,
+      author:       fieldAuthor.value.trim()      || undefined,
+      description:  fieldDescription.value.trim() || undefined,
+      minTier:      fieldMinTier.value,
+      threadUrl:    fieldThread.value.trim()      || undefined,
+      source:       source,
+      screenshot:   pendingScreenshot              || undefined,
+      // Per-script opt-in auth gate. When true the proxy injects the
+      // anti-sharing bootstrap so unauthenticated clients see a stub.
+      requiresAuth: fieldRequiresAuth && fieldRequiresAuth.checked || false
     };
 
     if (mode === 'update') {
