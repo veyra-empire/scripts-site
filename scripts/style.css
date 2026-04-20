@@ -454,6 +454,48 @@ button:hover, .install-btn:hover {
   background: rgba(242, 192, 114, 0.06);
 }
 
+.source-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.source-upload-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.source-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: rgba(242, 192, 114, 0.14);
+  border: 1px solid rgba(242, 192, 114, 0.5);
+  border-radius: 6px;
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: background 120ms ease;
+}
+.source-upload-btn:hover  { background: rgba(242, 192, 114, 0.22); }
+.source-upload-btn:active { background: rgba(242, 192, 114, 0.3); }
+.source-upload-input:focus + .source-upload-hint,
+.source-upload-btn:focus-within {
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.source-upload-hint {
+  font-size: 0.78rem;
+  color: var(--muted);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .mode-row { display: flex; flex-direction: column; }
 .mode-options { display: flex; gap: 14px; flex-wrap: wrap; }
 .mode-option {

@@ -315,16 +315,29 @@
     }
     sessionStorage.removeItem(CACHE_KEY);
 
-    var cached = localStorage.getItem(CACHE_KEY);
-    if (cached) {
-      try {
-        var data = JSON.parse(cached);
-        if (data && data.sid) {
-          renderScripts(data);
-          return;
-        }
-      } catch (_) { /* fall through to landing */ }
-      localStorage.removeItem(CACHE_KEY);
+    // Fresh-tab detection: sessionStorage is scoped to this tab only, so no
+    // marker means "this tab just opened" (close+reopen, Ctrl+click, cold
+    // browser start). On a fresh tab, always force the sign-in landing
+    // regardless of any cached session in localStorage - stale sessions are
+    // the common case and having the user click through the signed-in UI
+    // only to get bounced to OAuth on install is wasted motion. Within the
+    // same tab (refreshes, in-tab navigations), the cached session is
+    // trusted as before.
+    var tabLive = sessionStorage.getItem('veyra_tab_live');
+    sessionStorage.setItem('veyra_tab_live', '1');
+
+    if (tabLive) {
+      var cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        try {
+          var data = JSON.parse(cached);
+          if (data && data.sid) {
+            renderScripts(data);
+            return;
+          }
+        } catch (_) { /* fall through to landing */ }
+        localStorage.removeItem(CACHE_KEY);
+      }
     }
 
     show(elOauth);

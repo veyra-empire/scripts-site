@@ -176,6 +176,12 @@
 
           <div class="form-row submit-only">
             <label class="form-label" for="field-source">Script source</label>
+            <div class="source-toolbar">
+              <label class="source-upload-btn" for="field-source-file">Upload a file</label>
+              <input type="file" id="field-source-file" class="source-upload-input"
+                     accept=".user.js,.js,text/javascript,application/javascript,text/plain">
+              <span class="source-upload-hint">or drop a .user.js file below, or paste the source.</span>
+            </div>
             <textarea id="field-source" class="form-input form-source"
                       rows="10" spellcheck="false"
                       placeholder="Drop a .user.js file here, or paste the full source. Must include a // ==UserScript== block with @name and @version."></textarea>

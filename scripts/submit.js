@@ -252,8 +252,28 @@
       .substring(0, 48);
   }
 
-  // ─── Drag-drop onto source textarea ──────────────────────────────────────
-  function wireDragDrop() {
+  // Shared file->textarea loader used by both drag-drop and the Upload button.
+  // Mobile browsers don't expose drag-drop on touch; the Upload button is the
+  // only intake path that works there. Also handy for anyone with a .user.js
+  // file on disk who doesn't want to open-and-paste.
+  function loadSourceFromFile(file) {
+    if (!file) return;
+    if (file.size > MAX_BYTES) {
+      showError('That file is larger than the 3 MB limit.');
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function() {
+      fieldSource.value = String(reader.result || '');
+      autoFillFromSource();
+      updateSizeHint();
+    };
+    reader.onerror = function() { showError('Failed to read file.'); };
+    reader.readAsText(file);
+  }
+
+  // ─── Source intake (drag-drop + file picker) ─────────────────────────────
+  function wireSourceIntake() {
     var stopDefault = function(e) { e.preventDefault(); e.stopPropagation(); };
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(function(evt) {
       fieldSource.addEventListener(evt, stopDefault);
@@ -264,20 +284,21 @@
       fieldSource.classList.remove('drag-over');
       var dt = e.dataTransfer;
       if (!dt || !dt.files || !dt.files.length) return;
-      var file = dt.files[0];
-      if (file.size > MAX_BYTES) {
-        showError('That file is larger than the 3 MB limit.');
-        return;
-      }
-      var reader = new FileReader();
-      reader.onload = function() {
-        fieldSource.value = String(reader.result || '');
-        autoFillFromSource();
-        updateSizeHint();
-      };
-      reader.onerror = function() { showError('Failed to read file.'); };
-      reader.readAsText(file);
+      loadSourceFromFile(dt.files[0]);
     });
+
+    // Upload button - visible label acts as a file picker trigger. Works on
+    // mobile where drag-drop is unavailable and clipboards can't hold multi-KB
+    // source reliably.
+    var fieldSourceFile = document.getElementById('field-source-file');
+    if (fieldSourceFile) {
+      fieldSourceFile.addEventListener('change', function() {
+        var f = fieldSourceFile.files && fieldSourceFile.files[0];
+        loadSourceFromFile(f);
+        // Reset so re-selecting the same file re-triggers change.
+        fieldSourceFile.value = '';
+      });
+    }
   }
 
   function updateSizeHint() {
@@ -727,7 +748,7 @@
       updateSizeHint();
     });
     fieldSource.addEventListener('blur', autoFillFromSource);
-    wireDragDrop();
+    wireSourceIntake();
     wireScreenshot();
     wireVersionToggle();
     updateSizeHint();
