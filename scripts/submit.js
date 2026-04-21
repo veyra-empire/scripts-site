@@ -382,6 +382,7 @@
     'not-found':          "No script with that ID exists. Switch to New mode, or pick a different script to update.",
     'not-owner':          "You don't own this script. Only the original submitter (or lmv) can update it.",
     'invalid-script':     "The script source doesn't look like a valid userscript. Make sure it has a // ==UserScript== block with at least @name and @version.",
+    'pre-injected-source': "Your source already contains VEYRA proxy code - it looks like you copied it out of Tampermonkey after installing. Please submit the original clean version instead (from your own editor before install, or from the veyra-empire/scripts repo).",
     'invalid-id':         'Script ID must be lowercase letters, digits, and hyphens only (2-49 chars).',
     'invalid-min-tier':   'Min tier must be probationary, member, or tester.',
     'invalid-thread-url': 'Thread URL must start with https://',
