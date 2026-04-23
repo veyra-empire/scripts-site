@@ -370,7 +370,8 @@ button:hover, .install-btn:hover {
   margin: 0 0 12px;
   line-height: 1.5;
 }
-.extensions-grid {
+.extensions-grid,
+.resources-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 14px;
@@ -383,6 +384,31 @@ button:hover, .install-btn:hover {
 .extension-btn:hover {
   background: rgba(242, 192, 114, 0.2);
   color: var(--accent);
+}
+
+/* Resource cards: same visual family as extensions but with a subtly
+   different tag + button accent so members can tell at a glance the
+   flow is different (not a Tampermonkey install, not a Drive unpack). */
+.resource-tag {
+  background: rgba(136, 180, 255, 0.14);
+  border-color: rgba(136, 180, 255, 0.5);
+  color: #9ec2ff;
+}
+.resource-btn {
+  background: rgba(136, 180, 255, 0.12);
+  border: 1px solid rgba(136, 180, 255, 0.5);
+  color: #9ec2ff;
+}
+.resource-btn:hover {
+  background: rgba(136, 180, 255, 0.2);
+  color: #b8d2ff;
+}
+.resource-updated {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 2px 0 4px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
 }
 
 .script-actions {

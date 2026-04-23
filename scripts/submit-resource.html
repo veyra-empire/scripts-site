@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>VEYRA EMPIRE - Submit a script</title>
-  <meta name="description" content="Submit a userscript to the VEYRA EMPIRE script archive.">
+  <title>VEYRA EMPIRE - Submit a resource</title>
+  <meta name="description" content="Submit a community resource (spreadsheet, doc, reference sheet) to the VEYRA EMPIRE archive.">
   <meta name="theme-color" content="#0a0612">
 
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%230a0612'/><text x='32' y='46' font-family='Cinzel,serif' font-weight='700' font-size='44' text-anchor='middle' fill='%23f2c072'>V</text></svg>">
@@ -22,13 +22,13 @@
 
       <section id="state-loading">
         <h1>VEYRA EMPIRE</h1>
-        <p class="subtitle">Submit a script</p>
+        <p class="subtitle">Submit a resource</p>
         <p class="loading-msg">Loading&hellip;</p>
       </section>
 
       <section id="state-unauthenticated" hidden>
         <h1>VEYRA EMPIRE</h1>
-        <p class="subtitle">Submit a script</p>
+        <p class="subtitle">Submit a resource</p>
         <p class="denied-msg">
           You need to sign in first.
         </p>
@@ -39,12 +39,12 @@
 
       <section id="state-form" hidden>
         <h1>VEYRA EMPIRE</h1>
-        <p class="subtitle">Submit a script</p>
+        <p class="subtitle">Submit a resource</p>
 
         <p class="trust-notice">
           <strong>Submissions are reviewed.</strong>
-          Your script opens a pull request assigned to lmv; it won't appear in the archive until reviewed and merged.
-          Up to 3 open submissions at a time, 20 per day, 100 per week.
+          Your submission opens a pull request assigned to lmv; it won't appear in the archive until reviewed and merged.
+          Up to 3 open submissions at a time, 20 per day, 100 per week (shared with script submissions).
         </p>
 
         <div id="open-submissions" class="open-submissions" hidden>
@@ -62,7 +62,7 @@
             <div class="mode-options">
               <label class="mode-option">
                 <input type="radio" name="mode" value="new" checked>
-                <span>New script</span>
+                <span>New resource</span>
               </label>
               <label class="mode-option" id="mode-update-label">
                 <input type="radio" name="mode" value="update">
@@ -76,26 +76,26 @@
           </div>
 
           <div class="form-row" id="id-new-row">
-            <label class="form-label" for="id-new">Script ID</label>
-            <input type="text" id="id-new" class="form-input" placeholder="e.g. crystals-swap"
+            <label class="form-label" for="id-new">Resource ID</label>
+            <input type="text" id="id-new" class="form-input" placeholder="e.g. pve-defense-sheet"
                    autocomplete="off" spellcheck="false" required>
-            <p class="form-hint">Lowercase letters, digits, hyphens. This becomes the manifest key and the install URL slug.</p>
+            <p class="form-hint">Lowercase letters, digits, hyphens. This becomes the manifest key.</p>
           </div>
 
           <div class="form-row" id="id-update-row" hidden>
-            <label class="form-label" for="id-update">Script to update</label>
+            <label class="form-label" for="id-update">Resource to update</label>
             <select id="id-update" class="form-input">
-              <option value="">(no scripts owned)</option>
+              <option value="">(no resources owned)</option>
             </select>
-            <p class="form-hint">Only scripts you own are listed.</p>
+            <p class="form-hint">Only resources you own are listed.</p>
           </div>
 
           <div class="form-row" id="id-delete-row" hidden>
-            <label class="form-label" for="id-delete">Script to delete</label>
+            <label class="form-label" for="id-delete">Resource to delete</label>
             <select id="id-delete" class="form-input">
-              <option value="">(no scripts owned)</option>
+              <option value="">(no resources owned)</option>
             </select>
-            <p class="form-hint">Only scripts you own are listed. Deletion opens a PR for lmv to review.</p>
+            <p class="form-hint">Only resources you own are listed. Deletion opens a PR for lmv to review.</p>
           </div>
 
           <div class="form-row delete-only" id="delete-name-row" hidden>
@@ -107,13 +107,13 @@
           <div class="form-row delete-only" id="delete-reason-row" hidden>
             <label class="form-label" for="field-reason">Reason for deletion</label>
             <textarea id="field-reason" class="form-input" rows="4" maxlength="2000"
-                      placeholder="At least 10 characters. Why should this script be removed?"></textarea>
+                      placeholder="At least 10 characters. Why should this resource be removed?"></textarea>
             <p class="form-hint">Minimum 10 characters. Maximum 2000.</p>
           </div>
 
           <div class="form-row submit-only">
-            <label class="form-label" for="field-name">Display name <span class="form-optional">(optional)</span></label>
-            <input type="text" id="field-name" class="form-input" placeholder="Falls back to @name in the header">
+            <label class="form-label" for="field-name">Display name</label>
+            <input type="text" id="field-name" class="form-input" placeholder="e.g. PvE Defense Spreadsheet">
           </div>
 
           <div class="form-row submit-only">
@@ -122,8 +122,15 @@
           </div>
 
           <div class="form-row submit-only">
-            <label class="form-label" for="field-description">Description <span class="form-optional">(optional)</span></label>
-            <input type="text" id="field-description" class="form-input" placeholder="Falls back to @description in the header">
+            <label class="form-label" for="field-description">Description</label>
+            <input type="text" id="field-description" class="form-input" placeholder="One-line summary">
+          </div>
+
+          <div class="form-row submit-only">
+            <label class="form-label" for="field-url">URL</label>
+            <input type="url" id="field-url" class="form-input"
+                   placeholder="https://docs.google.com/spreadsheets/d/...">
+            <p class="form-hint">Must be https://. Opens in a new tab when members click the Open button.</p>
           </div>
 
           <div class="form-row submit-only">
@@ -137,41 +144,38 @@
           </div>
 
           <div class="form-row submit-only">
-            <label class="attest">
-              <input type="checkbox" id="field-requires-auth">
-              <span>Require archive sign-in to run this script</span>
-            </label>
-            <p class="form-hint">
-              Turns the script into a stub for anyone not signed into the archive, or whose tier is below the minimum.
-              Use for sensitive scripts where leaks are costly. Default: off.
-            </p>
-          </div>
-
-          <div class="form-row update-only" id="update-version-row" hidden>
-            <label class="form-label" for="field-version">Version</label>
+            <label class="form-label" for="field-version">Version <span class="form-optional">(optional)</span></label>
             <div class="version-row">
-              <input type="text" id="field-version" class="form-input" readonly>
-              <button type="button" id="field-version-btn" class="version-btn">Edit</button>
+              <input type="text" id="field-version" class="form-input" placeholder="e.g. 1.0.0 - leave blank if the resource isn't versioned">
             </div>
-            <p class="form-hint">Pre-baked from the pasted script's <code>@version</code>. Tampermonkey compares this to decide whether to auto-update installed copies, so bump it if your change should propagate.</p>
+            <p class="form-hint">Displayed as a pill next to the name when set. Spreadsheets that evolve continuously usually leave this blank - the archive shows the last-modified date regardless.</p>
             <div id="version-warning" class="form-warning" hidden>
-              Tampermonkey won't auto-install version <strong id="vw-new"></strong> over the currently distributed <strong id="vw-cur"></strong>.
-              To reach existing users, bump the version above <span id="vw-cur2"></span> and describe the rollback in the What's new section below. Otherwise only fresh installs will pick this up.
+              You're shipping version <strong id="vw-new"></strong> over the currently listed <strong id="vw-cur"></strong>.
+              That's a downgrade - double-check the version field if this wasn't intentional.
             </div>
           </div>
 
           <div class="form-row update-only" id="update-purpose-row" hidden>
             <label class="form-label" for="field-purpose">What's new <span class="form-optional">(optional)</span></label>
             <textarea id="field-purpose" class="form-input" rows="3" maxlength="2000"
-                      placeholder="Short description of the change. Appears in the Discord announcement."></textarea>
-            <p class="form-hint">Include in the Discord announcement if set.</p>
+                      placeholder="Short description of the change. Adds a new entry to the resource's changelog."></textarea>
+            <p class="form-hint">Included in the archive's &quot;Show recent changes&quot; disclosure.</p>
+          </div>
+
+          <div class="form-row submit-only">
+            <label class="form-label" for="field-instructions">Instructions <span class="form-optional">(optional)</span></label>
+            <textarea id="field-instructions" class="form-input" rows="4" maxlength="3000"
+                      placeholder="One step per line. e.g.
+File -> Make a copy before editing
+Fill in the yellow cells on the Inputs tab"></textarea>
+            <p class="form-hint">One step per line. Blank lines are ignored. Max 15 steps, 500 chars each. Renders as a numbered &quot;Instructions&quot; disclosure on the card.</p>
           </div>
 
           <div class="form-row submit-only">
             <label class="form-label" for="field-thread">Discussion thread <span class="form-optional">(optional)</span></label>
             <input type="url" id="field-thread" class="form-input"
                    placeholder="https://discord.com/channels/...">
-            <p class="form-hint">Must be https://. Shown as a "Discussion -&gt;" link on the script card.</p>
+            <p class="form-hint">Must be https://. Shown as a &quot;Discussion -&gt;&quot; link on the resource card.</p>
           </div>
 
           <div class="form-row submit-only">
@@ -182,21 +186,7 @@
               <img id="screenshot-preview-img" alt="Screenshot preview">
               <button type="button" id="screenshot-clear" class="screenshot-clear">Remove</button>
             </div>
-            <p class="form-hint">PNG, JPEG, or WebP. Max 2 MB. Displays as an expandable thumbnail on the script card.</p>
-          </div>
-
-          <div class="form-row submit-only">
-            <label class="form-label" for="field-source">Script source</label>
-            <div class="source-toolbar">
-              <label class="source-upload-btn" for="field-source-file">Upload a file</label>
-              <input type="file" id="field-source-file" class="source-upload-input"
-                     accept=".user.js,.js,text/javascript,application/javascript,text/plain">
-              <span class="source-upload-hint">or drop a .user.js file below, or paste the source.</span>
-            </div>
-            <textarea id="field-source" class="form-input form-source"
-                      rows="10" spellcheck="false"
-                      placeholder="Drop a .user.js file here, or paste the full source. Must include a // ==UserScript== block with @name and @version."></textarea>
-            <p class="form-hint" id="source-hint">Max 3 MB.</p>
+            <p class="form-hint">PNG, JPEG, or WebP. Max 2 MB. Displays as an expandable thumbnail on the card.</p>
           </div>
 
           <div class="form-row submit-only">
@@ -209,7 +199,7 @@
           <div class="form-row delete-only" id="delete-attest-row" hidden>
             <label class="attest">
               <input type="checkbox" id="field-delete-attest">
-              <span>I understand this will remove the script from the archive permanently (pending lmv's review).</span>
+              <span>I understand this will remove the resource from the archive permanently (pending lmv's review).</span>
             </label>
           </div>
 
@@ -232,7 +222,7 @@
         <h1>VEYRA EMPIRE</h1>
         <p class="subtitle">Submitted</p>
         <p class="denied-msg" style="color: var(--text);">
-          <strong id="success-title">Your script was submitted.</strong><br>
+          <strong id="success-title">Your resource was submitted.</strong><br>
           <span id="success-detail">lmv will review it within a day or two. If accepted, the archive will show it after merge.</span>
         </p>
         <div style="text-align:center;">
@@ -242,6 +232,6 @@
 
     </div>
   </div>
-  <script src="submit.js"></script>
+  <script src="submit-resource.js"></script>
 </body>
 </html>

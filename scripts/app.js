@@ -11,6 +11,18 @@
   var REDIRECT_URI = 'https://veyra-empire.github.io/scripts/';
 
   var TIER_ORDER = ['probationary', 'member', 'tester', 'owner'];
+
+  // Flavorful display labels. Internal tier values (in the manifest, on
+  // the proxy, and in the Tiers sheet) stay as 'probationary' / 'member'
+  // / 'tester' / 'owner' - this map only affects what users see. Update
+  // the same map in submit.js / submit-resource.js if you tweak it.
+  var TIER_DISPLAY = {
+    probationary: 'Probationary',
+    member:       'Full Member',
+    tester:       'Tester',
+    owner:        'Emperor'
+  };
+  function tierLabel(t) { return TIER_DISPLAY[t] || t || ''; }
   // veyra_session lives in localStorage so install.html (a separate tab)
   // can read it when the user clicks an Install button.
   var CACHE_KEY  = 'veyra_session';
@@ -102,16 +114,21 @@
   function renderScripts(data) {
     elName.textContent = data.name || (data.email ? data.email.split('@')[0] : '');
     elEmail.textContent = data.email || '';
-    elTier.textContent = data.tier || '';
+    elTier.textContent = tierLabel(data.tier);
     elTier.className = 'tier-badge tier-' + (data.tier || '');
 
-    var scripts = data.scripts || [];
+    var scripts    = data.scripts    || [];
+    var resources  = data.resources  || [];
+    var extensions = data.extensions || [];
+
+    // Show the "no content at your tier" message only when ALL three
+    // sections are empty. Each section's own container hides itself when
+    // empty (see renderResources / renderExtensions).
+    elEmpty.hidden = !(scripts.length === 0 && resources.length === 0 && extensions.length === 0);
 
     if (scripts.length === 0) {
-      elEmpty.hidden = false;
       elControls.hidden = true;
     } else {
-      elEmpty.hidden = true;
       elControls.hidden = false;
       elGrid.innerHTML = '';
       scripts.forEach(function(s) {
@@ -141,7 +158,7 @@
         if (s.minTier) {
           var pill = document.createElement('span');
           pill.className = 'tier-pill tier-' + s.minTier;
-          pill.textContent = s.minTier;
+          pill.textContent = tierLabel(s.minTier);
           meta.appendChild(document.createTextNode(' '));
           meta.appendChild(pill);
         }
@@ -213,7 +230,8 @@
       applySort();
     }
 
-    renderExtensions(data.extensions || []);
+    renderResources(resources);
+    renderExtensions(extensions);
 
     show(elScripts);
   }
@@ -285,7 +303,7 @@
       if (x.minTier) {
         var pill = document.createElement('span');
         pill.className = 'tier-pill tier-' + x.minTier;
-        pill.textContent = x.minTier;
+        pill.textContent = tierLabel(x.minTier);
         meta.appendChild(document.createTextNode(' '));
         meta.appendChild(pill);
       }
@@ -333,13 +351,17 @@
 
       var actions = document.createElement('div');
       actions.className = 'script-actions';
-      if (x.driveUrl && /^https:\/\//i.test(x.driveUrl)) {
+      // The proxy projects `openUrl` (signed redirect). `driveUrl` is no
+      // longer sent, so hovering this button only reveals the opaque
+      // script.google.com URL, not the underlying Drive folder.
+      var openHref = x.openUrl || '';
+      if (openHref && /^https:\/\//i.test(openHref)) {
         var btn = document.createElement('a');
         btn.className = 'install-btn extension-btn';
         btn.target = '_blank';
         btn.rel = 'noopener';
         btn.textContent = 'Open Drive folder';
-        btn.href = x.driveUrl;
+        btn.href = openHref;
         actions.appendChild(btn);
       }
       if (x.threadUrl && /^https:\/\//i.test(x.threadUrl)) {
@@ -354,6 +376,134 @@
 
       card.appendChild(titleWrap);
       card.appendChild(meta);
+      card.appendChild(desc);
+      if (instr) card.appendChild(instr);
+      if (changelogEl) card.appendChild(changelogEl);
+      if (thumb) card.appendChild(thumb);
+      card.appendChild(actions);
+      grid.appendChild(card);
+    });
+    section.hidden = false;
+  }
+
+  // Resources render into their own grid above scripts. Externally-hosted
+  // URL assets (spreadsheets, docs, reference material). Same visual
+  // affordance as extensions but with an "Updated <YYYY-MM-DD>" caption
+  // so members can see freshness at a glance even when the resource has
+  // no meaningful version number.
+  function renderResources(resources) {
+    var section = document.getElementById('resources-section');
+    var grid    = document.getElementById('resourcesGrid');
+    if (!section || !grid) return;
+    if (!resources.length) { section.hidden = true; return; }
+    grid.innerHTML = '';
+    resources.forEach(function(r) {
+      var card = document.createElement('div');
+      card.className = 'script-card resource-card';
+
+      var titleWrap = document.createElement('div');
+      titleWrap.className = 'card-title';
+      var h3 = document.createElement('h3');
+      h3.textContent = r.name || r.id;
+      titleWrap.appendChild(h3);
+      if (r.version) {
+        var verPill = document.createElement('span');
+        verPill.className = 'version-pill';
+        verPill.textContent = 'v' + r.version;
+        titleWrap.appendChild(verPill);
+      }
+      var resTag = document.createElement('span');
+      resTag.className = 'extension-tag resource-tag';
+      resTag.textContent = 'Resource';
+      titleWrap.appendChild(resTag);
+
+      var meta = document.createElement('div');
+      meta.className = 'script-meta';
+      meta.appendChild(document.createTextNode('by ' + (r.author || '')));
+      if (r.minTier) {
+        var pill = document.createElement('span');
+        pill.className = 'tier-pill tier-' + r.minTier;
+        pill.textContent = tierLabel(r.minTier);
+        meta.appendChild(document.createTextNode(' '));
+        meta.appendChild(pill);
+      }
+
+      // "Updated <date>" line - always present for resources.
+      var updated = null;
+      if (r.lastModified) {
+        updated = document.createElement('div');
+        updated.className = 'resource-updated';
+        updated.textContent = 'Updated ' + r.lastModified;
+      }
+
+      var desc = document.createElement('div');
+      desc.className = 'script-desc';
+      desc.textContent = r.description || '';
+
+      var thumb = null;
+      if (r.screenshotUrl && /^https:\/\/raw\.githubusercontent\.com\//i.test(r.screenshotUrl)) {
+        thumb = document.createElement('button');
+        thumb.type = 'button';
+        thumb.className = 'script-thumb';
+        thumb.setAttribute('aria-label', 'Show screenshot for ' + (r.name || r.id));
+        var img = document.createElement('img');
+        img.src = r.screenshotUrl;
+        img.alt = '';
+        img.loading = 'lazy';
+        thumb.appendChild(img);
+        thumb.addEventListener('click', function() { openLightbox(r.screenshotUrl, r.name || r.id); });
+      }
+
+      // Optional setup instructions (numbered list, expandable).
+      var instr = null;
+      if (Array.isArray(r.instructions) && r.instructions.length) {
+        instr = document.createElement('details');
+        instr.className = 'card-instructions';
+        var summary = document.createElement('summary');
+        summary.textContent = 'Instructions';
+        instr.appendChild(summary);
+        var ol = document.createElement('ol');
+        ol.className = 'card-instructions-list';
+        r.instructions.forEach(function(step) {
+          var li = document.createElement('li');
+          li.textContent = step;
+          ol.appendChild(li);
+        });
+        instr.appendChild(ol);
+      }
+
+      var changelogEl = null;
+      if (Array.isArray(r.changelog) && r.changelog.length) {
+        changelogEl = buildChangelog(r.changelog);
+      }
+
+      var actions = document.createElement('div');
+      actions.className = 'script-actions';
+      // Obfuscated link: proxy's apiOpen re-validates tier, then redirects.
+      // `url` (the real destination) is intentionally not projected.
+      var openHref = r.openUrl || '';
+      if (openHref && /^https:\/\//i.test(openHref)) {
+        var btn = document.createElement('a');
+        btn.className = 'install-btn resource-btn';
+        btn.target = '_blank';
+        btn.rel = 'noopener';
+        btn.textContent = 'Open';
+        btn.href = openHref;
+        actions.appendChild(btn);
+      }
+      if (r.threadUrl && /^https:\/\//i.test(r.threadUrl)) {
+        var threadLink = document.createElement('a');
+        threadLink.className = 'thread-link';
+        threadLink.target = '_blank';
+        threadLink.rel = 'noopener';
+        threadLink.href = r.threadUrl;
+        threadLink.textContent = 'Discussion \u2192';
+        actions.appendChild(threadLink);
+      }
+
+      card.appendChild(titleWrap);
+      card.appendChild(meta);
+      if (updated) card.appendChild(updated);
       card.appendChild(desc);
       if (instr) card.appendChild(instr);
       if (changelogEl) card.appendChild(changelogEl);

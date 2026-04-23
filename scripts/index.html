@@ -76,19 +76,29 @@
         </div>
 
         <p class="trust-notice">
-          <strong>These scripts are shared on trust.</strong>
+          <strong>These tools are shared on trust.</strong>
           If you have access, it's because that trust was extended to you personally.
           Please do not share the files with others - send them to the Discord or have them contact lmv instead.
         </p>
 
-        <p class="tm-banner">
-          Install requires <a href="https://www.tampermonkey.net/" target="_blank" rel="noopener">Tampermonkey</a>.
-          Without it, Install just opens the raw script source.
-        </p>
+        <div id="empty-state" class="empty-state" hidden>No content available at your tier yet.</div>
 
-        <div id="empty-state" class="empty-state" hidden>No scripts available at your tier yet.</div>
+        <div id="resources-section" hidden>
+          <h2 class="section-heading">Resources</h2>
+          <p class="section-blurb">
+            Community-shared spreadsheets, docs, and reference material. Open to view in a new tab. If you need edit or copy access to the source, that's up to the original author - ping them on Discord.
+          </p>
+          <div class="resources-grid" id="resourcesGrid"></div>
+        </div>
 
         <div id="scripts-controls" hidden>
+          <h2 class="section-heading">Userscripts</h2>
+          <p class="section-blurb">
+            Tampermonkey userscripts - modular add-ons that patch behavior on demonicscans.org. Once installed through this archive, they auto-update according to your Tampermonkey settings (typically every few hours), so no reinstall is needed when a new version ships.
+          </p>
+          <p class="tm-banner">
+            Install requires <a href="https://www.tampermonkey.net/" target="_blank" rel="noopener">Tampermonkey</a>. Without it, Install just opens the raw script source.
+          </p>
           <div class="sort-bar" id="sortBar">
             <span class="label">Sort</span>
             <button class="sort-btn active" data-sort="name">Name</button>
@@ -97,6 +107,9 @@
             <button class="sort-btn sort-dir" id="sortDir" title="Toggle ascending / descending" aria-label="Toggle direction">&#x25B2;</button>
           </div>
           <div class="scripts-grid" id="scriptsGrid"></div>
+          <p class="tampermonkey-hint">
+            Clicking Install opens Tampermonkey's install dialog. If nothing happens, make sure Tampermonkey is installed: <a href="https://www.tampermonkey.net/" target="_blank" rel="noopener">tampermonkey.net</a>
+          </p>
         </div>
 
         <div id="extensions-section" hidden>
@@ -110,11 +123,10 @@
         <div style="text-align:center;">
           <a class="back-link" href="submit.html">Submit a script</a>
           <span style="color: var(--muted); margin: 0 8px;">&middot;</span>
+          <a class="back-link" href="submit-resource.html">Submit a resource</a>
+          <span style="color: var(--muted); margin: 0 8px;">&middot;</span>
           <a class="back-link" href="#" id="signout-btn">Sign out / switch account</a>
         </div>
-        <p class="tampermonkey-hint">
-          Clicking Install opens Tampermonkey's install dialog. If nothing happens, make sure Tampermonkey is installed: <a href="https://www.tampermonkey.net/" target="_blank" rel="noopener">tampermonkey.net</a>
-        </p>
       </section>
 
     </div>
