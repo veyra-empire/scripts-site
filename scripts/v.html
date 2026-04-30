@@ -28,7 +28,12 @@
     5. close
 
   Message shape (shortened to reduce bootstrap blob size):
-    { t: "_vf", n: <nonce>, s: "ok" | "null-session" | "bad-origin" | "bad-nonce", d: <discordId> }
+    { t: "_vf", n: <nonce>, s: "ok" | "null-session" | "bad-origin" | "bad-nonce",
+      d: <discordId>, tr: <tierRank: 0=probationary..3=owner> }
+  `tr` is included on success so the bootstrap can populate the shared
+  veyra_auth_v1 cache with the user's actual tier rank (lets multiple
+  requiresAuth scripts evaluate against different minTiers from one
+  verify round-trip).
 -->
 <div class="wrap">
   <h1 id="heading">Verifying access&hellip;</h1>
@@ -107,7 +112,12 @@
     if (res && res.ok && res.discordId) {
       setHeading('Access verified');
       setBody('<p class="muted">Returning to the game&hellip;</p>');
-      reply('ok', { d: res.discordId });
+      // tr (tier rank) is forwarded to the bootstrap so it can populate
+      // the shared veyra_auth_v1 cache. Defaults to -1 if the proxy
+      // didn't return it (legacy / malformed response).
+      var tr = (res.tierRank === undefined || res.tierRank === null)
+        ? -1 : Number(res.tierRank);
+      reply('ok', { d: res.discordId, tr: tr });
     } else {
       showSignInNeeded();
       try {
