@@ -294,7 +294,7 @@
       }
       var extTag = document.createElement('span');
       extTag.className = 'extension-tag';
-      extTag.textContent = 'Browser extension';
+      extTag.textContent = 'App';
       titleWrap.appendChild(extTag);
 
       var meta = document.createElement('div');
