@@ -58,7 +58,13 @@
 
   // ─── DOM refs ─────────────────────────────────────────────────────────────
   var session = null;
-  var ownedScripts = [];  // [{id, name, description, minTier, threadUrl}, ...]
+  // Holds every script in the manifest (the submission flow is open: any
+  // tiered member can update or delete any script, lmv reviews each PR).
+  // Each entry includes the script's recorded `author` and `ownerDiscordId`
+  // so the dropdown can show "name - by author (id)" and the form can
+  // prefill `fieldAuthor` from the existing manifest author rather than
+  // overwriting it with the submitter's name.
+  var availableScripts = [];
   var pendingScreenshot = null;  // { mimeType, base64 } or null
   var form, modeInputs;
   var idNewRow, idUpdateRow, idDeleteRow, idNew, idUpdate, idDelete;
@@ -150,7 +156,7 @@
   function prefillFromSelectedUpdate() {
     var selectedId = idUpdate.value;
     if (!selectedId) return;
-    var s = ownedScripts.find(function(x) { return x.id === selectedId; });
+    var s = availableScripts.find(function(x) { return x.id === selectedId; });
     if (!s) return;
     // Only fill fields that are empty, so we don't clobber user edits.
     if (!fieldName.value)        fieldName.value        = s.name || '';
@@ -160,6 +166,11 @@
     // Prefill the auth flag from the script's current state. Submitter can
     // toggle if they want to change it as part of this update.
     if (fieldRequiresAuth) fieldRequiresAuth.checked = s.requiresAuth === true;
+    // Prefill author from the manifest's recorded author rather than the
+    // session.name default. Cross-author updates preserve attribution by
+    // default; submitter can still override (e.g. add themselves as a
+    // co-author) before submitting.
+    if (s.author) fieldAuthor.value = s.author;
     updateVersionWarning();
   }
 
@@ -189,7 +200,7 @@
     if (!versionWarning) return;
     if (currentMode() !== 'update') { versionWarning.hidden = true; return; }
     var selectedId = idUpdate.value;
-    var s = selectedId && ownedScripts.find(function(x) { return x.id === selectedId; });
+    var s = selectedId && availableScripts.find(function(x) { return x.id === selectedId; });
     var current = s && s.version;
     var proposed = fieldVersion && fieldVersion.value.trim();
     if (!current || !proposed) { versionWarning.hidden = true; return; }
@@ -681,30 +692,35 @@
     // Pre-fill author from session name.
     fieldAuthor.value = session.name || '';
 
-    // Fetch list of scripts the user owns so we can enable the update mode,
-    // plus the caller's submission-rate-limit status so we can render the
-    // cancel banner up-front if they have an open PR.
+    // Fetch every script in the archive (submission flow is open; lmv
+    // reviews cross-author submissions via the PR body banner). Also
+    // fetches the caller's submission-rate-limit status for the cancel
+    // banner.
     jsonp(PROXY_URL + '?api=my-scripts&session=' + encodeURIComponent(session.sid))
       .then(function(res) {
         if (res && res.error === 'expired') { show('state-unauthenticated'); return; }
-        ownedScripts = (res && res.scripts) || [];
-        if (!ownedScripts.length) {
+        availableScripts = (res && res.scripts) || [];
+        if (!availableScripts.length) {
+          // Degenerate case: empty manifest. Update / Delete have nothing to
+          // pick, so disable those modes. Doesn't happen in practice.
           modeUpdateLabel.classList.add('disabled');
           modeUpdateLabel.querySelector('input').disabled = true;
           modeDeleteLabel.classList.add('disabled');
           modeDeleteLabel.querySelector('input').disabled = true;
         } else {
-          // Populate the update-mode and delete-mode dropdowns.
+          // Populate the update-mode and delete-mode dropdowns. Option text
+          // includes author so cross-author submitters know whose script
+          // they're picking (e.g. "Compact PvP - by [EMP] lmv (compact-pvp)").
           [idUpdate, idDelete].forEach(function(sel) {
             sel.innerHTML = '';
             var first = document.createElement('option');
             first.value = '';
             first.textContent = '-- select --';
             sel.appendChild(first);
-            ownedScripts.forEach(function(s) {
+            availableScripts.forEach(function(s) {
               var opt = document.createElement('option');
               opt.value = s.id;
-              opt.textContent = s.name + '  (' + s.id + ')';
+              opt.textContent = s.name + ' - by ' + (s.author || 'unknown') + '  (' + s.id + ')';
               sel.appendChild(opt);
             });
           });

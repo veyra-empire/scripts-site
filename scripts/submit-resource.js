@@ -56,7 +56,11 @@
 
   // ─── DOM refs ─────────────────────────────────────────────────────────────
   var session = null;
-  var ownedResources = [];  // [{id, name, description, minTier, version, url, instructions, threadUrl, screenshotUrl, lastModified}, ...]
+  // Holds every resource in the manifest. Submission flow is open: any
+  // tiered member can update or delete any resource, lmv reviews each PR.
+  // Each entry includes `author` and `ownerDiscordId` for the cross-author
+  // dropdown labels and author prefill (parallel to submit.js).
+  var availableResources = [];
   var pendingScreenshot = null;  // { mimeType, base64 } or null
   var form, modeInputs;
   var idNewRow, idUpdateRow, idDeleteRow, idNew, idUpdate, idDelete;
@@ -141,7 +145,7 @@
   function prefillFromSelectedUpdate() {
     var selectedId = idUpdate.value;
     if (!selectedId) return;
-    var r = ownedResources.find(function(x) { return x.id === selectedId; });
+    var r = availableResources.find(function(x) { return x.id === selectedId; });
     if (!r) return;
     // Only fill fields that are empty, so we don't clobber user edits.
     if (!fieldName.value)        fieldName.value        = r.name        || '';
@@ -153,6 +157,10 @@
     if (!fieldInstructions.value && Array.isArray(r.instructions) && r.instructions.length) {
       fieldInstructions.value = r.instructions.join('\n');
     }
+    // Prefill author from manifest (same pattern as submit.js): preserves
+    // attribution by default on cross-author updates. Submitter can still
+    // override (e.g. add themselves as a co-author).
+    if (r.author) fieldAuthor.value = r.author;
     updateVersionWarning();
   }
 
@@ -181,7 +189,7 @@
     if (!versionWarning) return;
     if (currentMode() !== 'update') { versionWarning.hidden = true; return; }
     var selectedId = idUpdate.value;
-    var r = selectedId && ownedResources.find(function(x) { return x.id === selectedId; });
+    var r = selectedId && availableResources.find(function(x) { return x.id === selectedId; });
     var current  = r && r.version;
     var proposed = fieldVersion && fieldVersion.value.trim();
     if (!current || !proposed) { versionWarning.hidden = true; return; }
@@ -585,28 +593,34 @@
     });
     idNew.addEventListener('input', function() { idNew.dataset.userEdited = '1'; });
 
-    // Fetch list of resources the user owns so we can enable update mode,
-    // plus the caller's submission-rate-limit status.
+    // Fetch every resource in the archive (submission flow is open; lmv
+    // reviews cross-author submissions via the PR body banner). Also
+    // fetches the caller's submission-rate-limit status for the cancel
+    // banner.
     jsonp(PROXY_URL + '?api=my-resources&session=' + encodeURIComponent(session.sid))
       .then(function(res) {
         if (res && res.error === 'expired') { show('state-unauthenticated'); return; }
-        ownedResources = (res && res.resources) || [];
-        if (!ownedResources.length) {
+        availableResources = (res && res.resources) || [];
+        if (!availableResources.length) {
+          // Degenerate case: empty resources section. Update / Delete have
+          // nothing to pick. Falls through to the New mode workflow.
           modeUpdateLabel.classList.add('disabled');
           modeUpdateLabel.querySelector('input').disabled = true;
           modeDeleteLabel.classList.add('disabled');
           modeDeleteLabel.querySelector('input').disabled = true;
         } else {
+          // Option text includes author so cross-author submitters see
+          // whose resource they're picking.
           [idUpdate, idDelete].forEach(function(sel) {
             sel.innerHTML = '';
             var first = document.createElement('option');
             first.value = '';
             first.textContent = '-- select --';
             sel.appendChild(first);
-            ownedResources.forEach(function(r) {
+            availableResources.forEach(function(r) {
               var opt = document.createElement('option');
               opt.value = r.id;
-              opt.textContent = r.name + '  (' + r.id + ')';
+              opt.textContent = r.name + ' - by ' + (r.author || 'unknown') + '  (' + r.id + ')';
               sel.appendChild(opt);
             });
           });
