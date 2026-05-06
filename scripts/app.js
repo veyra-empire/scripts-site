@@ -308,6 +308,15 @@
         meta.appendChild(pill);
       }
 
+      // "Updated <date>" caption (parity with resource cards) - only
+      // present on entries submitted through the new submit-app flow.
+      var xUpdated = null;
+      if (x.lastModified) {
+        xUpdated = document.createElement('div');
+        xUpdated.className = 'resource-updated';
+        xUpdated.textContent = 'Updated ' + x.lastModified;
+      }
+
       var desc = document.createElement('div');
       desc.className = 'script-desc';
       desc.textContent = x.description || '';
@@ -376,6 +385,7 @@
 
       card.appendChild(titleWrap);
       card.appendChild(meta);
+      if (xUpdated) card.appendChild(xUpdated);
       card.appendChild(desc);
       if (instr) card.appendChild(instr);
       if (changelogEl) card.appendChild(changelogEl);

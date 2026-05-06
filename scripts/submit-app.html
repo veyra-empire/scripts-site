@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VEYRA EMPIRE - Submit an app or extension</title>
+  <meta name="description" content="Submit a browser extension, Android APK, or similar standalone install to the VEYRA EMPIRE archive.">
+  <meta name="theme-color" content="#0a0612">
+
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%230a0612'/><text x='32' y='46' font-family='Cinzel,serif' font-weight='700' font-size='44' text-anchor='middle' fill='%23f2c072'>V</text></svg>">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <div class="overlay">
+    <div class="panel panel-wide">
+
+      <section id="state-loading">
+        <h1>VEYRA EMPIRE</h1>
+        <p class="subtitle">Submit an app or extension</p>
+        <p class="loading-msg">Loading&hellip;</p>
+      </section>
+
+      <section id="state-unauthenticated" hidden>
+        <h1>VEYRA EMPIRE</h1>
+        <p class="subtitle">Submit an app or extension</p>
+        <p class="denied-msg">
+          You need to sign in first.
+        </p>
+        <div style="text-align:center;">
+          <a class="install-btn" href="./">Go to archive</a>
+        </div>
+      </section>
+
+      <section id="state-form" hidden>
+        <h1>VEYRA EMPIRE</h1>
+        <p class="subtitle">Submit an app or extension</p>
+
+        <p class="trust-notice">
+          <strong>Submissions are reviewed.</strong>
+          Your submission opens a pull request assigned to lmv; it won't appear in the archive until reviewed and merged.
+          Up to 3 open submissions at a time, 20 per day, 100 per week (shared with script and resource submissions).
+        </p>
+
+        <div id="open-submissions" class="open-submissions" hidden>
+          <div class="open-submissions-header">
+            <strong>Open submissions pending review</strong>
+            <span id="open-submissions-count" class="open-submissions-count"></span>
+          </div>
+          <ul id="open-submissions-list" class="open-submissions-list"></ul>
+        </div>
+
+        <form id="submit-form" novalidate>
+
+          <div class="form-row mode-row" id="mode-row">
+            <label class="form-label">Mode</label>
+            <div class="mode-options">
+              <label class="mode-option">
+                <input type="radio" name="mode" value="new" checked>
+                <span>New app</span>
+              </label>
+              <label class="mode-option" id="mode-update-label">
+                <input type="radio" name="mode" value="update">
+                <span>Update existing</span>
+              </label>
+              <label class="mode-option" id="mode-delete-label">
+                <input type="radio" name="mode" value="delete">
+                <span>Delete existing</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-row" id="id-new-row">
+            <label class="form-label" for="id-new">App ID</label>
+            <input type="text" id="id-new" class="form-input" placeholder="e.g. ui-addon-empire"
+                   autocomplete="off" spellcheck="false" required>
+            <p class="form-hint">Lowercase letters, digits, hyphens. This becomes the manifest key.</p>
+          </div>
+
+          <div class="form-row" id="id-update-row" hidden>
+            <label class="form-label" for="id-update">App to update</label>
+            <select id="id-update" class="form-input">
+              <option value="">(no apps in archive)</option>
+            </select>
+            <p class="form-hint">Pick any existing app or extension. Cross-author updates are allowed; lmv reviews each PR.</p>
+          </div>
+
+          <div class="form-row" id="id-delete-row" hidden>
+            <label class="form-label" for="id-delete">App to delete</label>
+            <select id="id-delete" class="form-input">
+              <option value="">(no apps in archive)</option>
+            </select>
+            <p class="form-hint">Deletion opens a PR for lmv to review.</p>
+          </div>
+
+          <div class="form-row delete-only" id="delete-name-row" hidden>
+            <label class="form-label" for="field-submitter-name">Your name</label>
+            <input type="text" id="field-submitter-name" class="form-input" maxlength="120">
+            <p class="form-hint">Shown on the review PR so lmv knows who requested the deletion.</p>
+          </div>
+
+          <div class="form-row delete-only" id="delete-reason-row" hidden>
+            <label class="form-label" for="field-reason">Reason for deletion</label>
+            <textarea id="field-reason" class="form-input" rows="4" maxlength="2000"
+                      placeholder="At least 10 characters. Why should this app be removed?"></textarea>
+            <p class="form-hint">Minimum 10 characters. Maximum 2000.</p>
+          </div>
+
+          <div class="form-row submit-only">
+            <label class="form-label" for="field-name">Display name</label>
+            <input type="text" id="field-name" class="form-input" placeholder="e.g. UI-Addon EMPIRE">
+          </div>
+
+          <div class="form-row submit-only">
+            <label class="form-label" for="field-author">Author <span class="form-optional">(optional)</span></label>
+            <input type="text" id="field-author" class="form-input" placeholder="Defaults to your Discord handle">
+          </div>
+
+          <div class="form-row submit-only">
+            <label class="form-label" for="field-description">Description</label>
+            <input type="text" id="field-description" class="form-input" placeholder="One-line summary">
+          </div>
+
+          <div class="form-row submit-only">
+            <label class="form-label" for="field-url">Drive folder URL</label>
+            <input type="url" id="field-url" class="form-input"
+                   placeholder="https://drive.google.com/drive/folders/...">
+            <p class="form-hint">Must be https://. Members access this folder via an obfuscated proxy link from the archive's Open button.</p>
+          </div>
+
+          <div class="form-row submit-only">
+            <label class="form-label" for="field-min-tier">Min tier</label>
+            <select id="field-min-tier" class="form-input" required>
+              <option value="probationary">Probationary</option>
+              <option value="member" selected>Full Member</option>
+              <option value="tester">Tester</option>
+            </select>
+            <p class="form-hint">lmv may change this during review.</p>
+          </div>
+
+          <div class="form-row submit-only">
+            <label class="form-label" for="field-version">Version <span class="form-optional">(optional)</span></label>
+            <div class="version-row">
+              <input type="text" id="field-version" class="form-input" placeholder="e.g. 1.0.0">
+            </div>
+            <p class="form-hint">Patch increment when shipping a new build. Displayed as a pill next to the name. Leave blank for unversioned tools.</p>
+            <div id="version-warning" class="form-warning" hidden>
+              You're shipping version <strong id="vw-new"></strong> over the currently listed <strong id="vw-cur"></strong>.
+              That's a downgrade - double-check the version field if this wasn't intentional.
+            </div>
+          </div>
+
+          <div class="form-row update-only" id="update-purpose-row" hidden>
+            <label class="form-label" for="field-purpose">What's new <span class="form-optional">(optional)</span></label>
+            <textarea id="field-purpose" class="form-input" rows="3" maxlength="2000"
+                      placeholder="Short description of the change. Adds a new entry to the app's changelog and is announced in the Discord channel."></textarea>
+            <p class="form-hint">Included in the archive's &quot;Show recent changes&quot; disclosure and the Discord announcement.</p>
+          </div>
+
+          <div class="form-row submit-only">
+            <label class="form-label" for="field-instructions">Install instructions <span class="form-optional">(optional)</span></label>
+            <textarea id="field-instructions" class="form-input" rows="6" maxlength="3000"
+                      placeholder="One step per line. e.g.
+Chromium-based browsers only (Chrome, Brave, Edge, Arc, Opera).
+Open the Drive folder and download as a ZIP (three-dot menu -> Download).
+Unzip locally somewhere safe.
+Open chrome://extensions, toggle Developer mode (top right).
+Click Load unpacked and select the unzipped folder.
+
+Or for Android APKs:
+Download the .apk from the Drive folder.
+Allow Install from unknown sources for your file manager.
+Tap the downloaded .apk to install."></textarea>
+            <p class="form-hint">One step per line. Blank lines are ignored. Max 15 steps, 500 chars each. Renders as a numbered &quot;Install instructions&quot; disclosure on the card.</p>
+          </div>
+
+          <div class="form-row submit-only">
+            <label class="form-label" for="field-thread">Discussion thread <span class="form-optional">(optional)</span></label>
+            <input type="url" id="field-thread" class="form-input"
+                   placeholder="https://discord.com/channels/...">
+            <p class="form-hint">Must be https://. Shown as a &quot;Discussion -&gt;&quot; link on the app card.</p>
+          </div>
+
+          <div class="form-row submit-only">
+            <label class="form-label" for="field-screenshot">Screenshot <span class="form-optional">(optional)</span></label>
+            <input type="file" id="field-screenshot" class="form-input form-file"
+                   accept="image/png,image/jpeg,image/webp">
+            <div id="screenshot-preview" class="screenshot-preview" hidden>
+              <img id="screenshot-preview-img" alt="Screenshot preview">
+              <button type="button" id="screenshot-clear" class="screenshot-clear">Remove</button>
+            </div>
+            <p class="form-hint">PNG, JPEG, or WebP. Max 2 MB. Displays as an expandable thumbnail on the card.</p>
+          </div>
+
+          <div class="form-row submit-only">
+            <label class="attest">
+              <input type="checkbox" id="field-attest">
+              <span>I'm not redistributing someone else's work without permission.</span>
+            </label>
+          </div>
+
+          <div class="form-row delete-only" id="delete-attest-row" hidden>
+            <label class="attest">
+              <input type="checkbox" id="field-delete-attest">
+              <span>I understand this will remove the app from the archive permanently (pending lmv's review).</span>
+            </label>
+          </div>
+
+          <div class="form-row form-actions">
+            <button type="submit" id="submit-btn" class="install-btn" disabled>Submit</button>
+            <a class="back-link" href="./">Cancel</a>
+          </div>
+
+          <p id="form-error" class="form-error" hidden></p>
+        </form>
+      </section>
+
+      <section id="state-submitting" hidden>
+        <h1>VEYRA EMPIRE</h1>
+        <p class="subtitle">Submitting&hellip;</p>
+        <p class="loading-msg">Opening a pull request. This takes a few seconds.</p>
+      </section>
+
+      <section id="state-success" hidden>
+        <h1>VEYRA EMPIRE</h1>
+        <p class="subtitle">Submitted</p>
+        <p class="denied-msg" style="color: var(--text);">
+          <strong id="success-title">Your app was submitted.</strong><br>
+          <span id="success-detail">lmv will review it within a day or two. If accepted, the archive will show it after merge.</span>
+        </p>
+        <div style="text-align:center;">
+          <a class="install-btn" href="./">Back to archive</a>
+        </div>
+      </section>
+
+    </div>
+  </div>
+  <script src="submit-app.js"></script>
+</body>
+</html>
