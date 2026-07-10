@@ -17,6 +17,11 @@ html, body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color: var(--text);
   background: #0a0612;
+  /* Belt-and-suspenders: even if some grid child manages to overflow
+     despite the per-card wrap rules, the page itself won't allow
+     horizontal scroll. Prevents the "background doesn't follow"
+     look reported on mobile when horizontal scroll was possible. */
+  overflow-x: hidden;
 }
 
 body {
@@ -190,6 +195,12 @@ button:hover, .install-btn:hover {
   flex-direction: column;
   gap: 8px;
   transition: border-color 0.15s, background 0.15s;
+  /* Grid children default to min-width:auto (intrinsic content width),
+     which lets long unbreakable strings inside a card push its width
+     past the grid cell -> the whole panel overflows the viewport.
+     min-width:0 lets the card shrink; the text-wrap rules below then
+     handle the actual breaking. */
+  min-width: 0;
 }
 .script-card:hover {
   border-color: var(--panel-border);
@@ -202,16 +213,25 @@ button:hover, .install-btn:hover {
   margin: 0;
   color: var(--accent);
   letter-spacing: 0.04em;
+  /* Safety net for scripts with unusually long names / no natural
+     break points. anywhere is stronger than break-word - it will
+     break mid-word if that's what it takes to fit. */
+  overflow-wrap: anywhere;
 }
 .script-meta {
   font-size: 0.78rem;
   color: var(--muted);
+  overflow-wrap: anywhere;
 }
 .script-desc {
   font-size: 0.88rem;
   line-height: 1.45;
   color: var(--text);
   flex: 1;
+  /* User-provided description text. Long hashes, URLs, install
+     paths etc. would otherwise force horizontal scroll on mobile
+     because the string acts as one unbreakable "word". */
+  overflow-wrap: anywhere;
 }
 
 .script-thumb {
@@ -337,10 +357,17 @@ button:hover, .install-btn:hover {
   font-size: 0.75rem;
   color: var(--accent);
   letter-spacing: 0.02em;
+  /* Monospace + likely to contain version strings; break anywhere
+     so long tags don't push the card wider than mobile viewport. */
+  overflow-wrap: anywhere;
 }
 .card-changelog-notes {
   margin-top: 4px;
+  /* pre-wrap preserves author-typed newlines but does NOT break
+     unbreakable strings on its own. Pair with overflow-wrap so long
+     paths / URLs / hashes in changelog notes still wrap. */
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
   color: var(--text);
   font-size: 0.82rem;
   line-height: 1.45;
