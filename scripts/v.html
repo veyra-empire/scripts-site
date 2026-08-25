@@ -29,7 +29,7 @@
 
   Message shape (shortened to reduce bootstrap blob size):
     { t: "_vf", n: <nonce>, s: "ok" | "null-session" | "bad-origin" | "bad-nonce",
-      d: <discordId>, tr: <tierRank: 0=probationary..3=owner> }
+      d: <discordId>, tr: <tierRank: 0=probationary..3=owner>, dp: <devicePass> }
   `tr` is included on success so the bootstrap can populate the shared
   veyra_auth_v1 cache with the user's actual tier rank (lets multiple
   requiresAuth scripts evaluate against different minTiers from one
@@ -117,7 +117,10 @@
       // didn't return it (legacy / malformed response).
       var tr = (res.tierRank === undefined || res.tierRank === null)
         ? -1 : Number(res.tierRank);
-      reply('ok', { d: res.discordId, tr: tr });
+      // dp = signed device pass. The bootstrap stores it on the game origin
+      // so later freshness checks can hit the proxy directly instead of
+      // reopening this window every cycle.
+      reply('ok', { d: res.discordId, tr: tr, dp: res.devicePass || '' });
     } else {
       showSignInNeeded();
       try {
