@@ -48,9 +48,14 @@
 
   // Game hosts allowed to request identity. Matches the bootstrap's origin
   // check on the incoming postMessage target.
+  // SECURITY BOUNDARY: any origin listed here may ask the archive to confirm
+  // a member's identity. Restrict to domains operated by the game's owners.
+  // veyragame.com is an official alternate address for the same game.
   var ORIGIN_ALLOWLIST = [
     'https://demonicscans.org',
-    'http://demonicscans.org'
+    'http://demonicscans.org',
+    'https://veyragame.com',
+    'http://veyragame.com'
   ];
 
   function qp(name) {
