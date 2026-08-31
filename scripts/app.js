@@ -563,14 +563,19 @@
   });
 
   // ─── Discord authorize URL ───────────────────────────────────────────────
-  function buildAuthorizeUrl(state) {
+  // `force` swaps prompt=none for prompt=consent. With prompt=none Discord
+  // renders no UI at all for an account that has already authorized the app,
+  // so it silently hands back whichever account the browser is logged into and
+  // there is no way to pick a different one. prompt=consent brings back
+  // Discord's authorization screen, which is where the account switcher lives.
+  function buildAuthorizeUrl(state, force) {
     return 'https://discord.com/oauth2/authorize' +
            '?response_type=code' +
            '&client_id='    + encodeURIComponent(CLIENT_ID) +
            '&scope='        + encodeURIComponent('identify guilds') +
            '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) +
            '&state='        + encodeURIComponent(state) +
-           '&prompt=none';
+           '&prompt='       + (force ? 'consent' : 'none');
   }
 
   function randomState() {
@@ -582,10 +587,10 @@
     return s;
   }
 
-  function startSignIn() {
+  function startSignIn(force) {
     var state = randomState();
     sessionStorage.setItem(STATE_KEY, state);
-    location.href = buildAuthorizeUrl(state);
+    location.href = buildAuthorizeUrl(state, force);
   }
 
   // ─── Sign-in / sign-out ──────────────────────────────────────────────────
@@ -603,6 +608,22 @@
     sessionStorage.removeItem(STATE_KEY);
     location.replace(location.pathname);
   });
+
+  // "Switch account" links - sign-in landing, denied screen, and the footer.
+  // These force Discord's authorization screen so a member sitting on the
+  // wrong account can pick another one. Deliberately no local clearing:
+  // handleOauthCallback overwrites the cache and fingerprint only on success,
+  // so abandoning the attempt leaves the existing session - and the in-game
+  // auth that depends on veyra_fingerprint - untouched.
+  Array.prototype.forEach.call(
+    document.querySelectorAll('[data-switch-account]'),
+    function(el) {
+      el.addEventListener('click', function(e) {
+        e.preventDefault();
+        startSignIn(true);
+      });
+    }
+  );
 
   // ─── OAuth callback handler ──────────────────────────────────────────────
   function handleOauthCallback(code, state) {

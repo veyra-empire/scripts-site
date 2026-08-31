@@ -51,7 +51,10 @@
           <a id="signin-btn" class="install-btn" style="padding: 14px 32px; font-size: 1rem;"
              href="#" rel="noopener">Sign in with Discord</a>
         </div>
-        <p class="footer-note" style="margin-top: 26px;">Not a member? Join the <a href="https://discord.gg/YMDAaVbWk" target="_blank" rel="noopener">VEYRA EMPIRE Discord</a> first.</p>
+        <p class="footer-note" style="margin-top: 14px;">
+          Wrong Discord account? <a href="#" data-switch-account>Sign in with a different one</a>.
+        </p>
+        <p class="footer-note" style="margin-top: 18px;">Not a member? Join the <a href="https://discord.gg/YMDAaVbWk" target="_blank" rel="noopener">VEYRA EMPIRE Discord</a> first.</p>
         <p class="tampermonkey-hint">
           Don't have Tampermonkey yet? Install it here:
           <a href="https://www.tampermonkey.net/" target="_blank" rel="noopener">tampermonkey.net</a>
@@ -63,6 +66,8 @@
         <p id="denied-msg" class="denied-msg"></p>
         <div style="text-align:center;">
           <a class="back-link" href="./" id="denied-back">&larr; Back to sign-in</a>
+          <span style="color: var(--muted); margin: 0 8px;">&middot;</span>
+          <a class="back-link" href="#" data-switch-account>Try a different account</a>
         </div>
       </section>
 
@@ -127,7 +132,9 @@
           <span style="color: var(--muted); margin: 0 8px;">&middot;</span>
           <a class="back-link" href="submit-app.html">Submit an app or extension</a>
           <span style="color: var(--muted); margin: 0 8px;">&middot;</span>
-          <a class="back-link" href="#" id="signout-btn">Sign out / switch account</a>
+          <a class="back-link" href="#" id="signout-btn">Sign out</a>
+          <span style="color: var(--muted); margin: 0 8px;">&middot;</span>
+          <a class="back-link" href="#" data-switch-account>Switch account</a>
         </div>
       </section>
 
