@@ -24,10 +24,45 @@
   }
 
   function show(id) {
-    ['state-installing', 'state-unauthenticated', 'state-expired'].forEach(function(s) {
+    ['state-installing', 'state-unauthenticated', 'state-expired', 'state-manual'].forEach(function(s) {
       var el = document.getElementById(s);
       if (el) el.hidden = (s !== id);
     });
+  }
+
+  /**
+   * How the minted URL is handed to Tampermonkey. Default is unchanged; the
+   * other two are diagnostics for the stray "intermediate step" tab that TM
+   * leaves behind after an install.
+   *
+   * Two candidate causes, and these separate them:
+   *   1. the Google sign-in detour on the /exec/<path>.user.js form, which
+   *      crosses origins twice before the script arrives, or
+   *   2. simply that location.replace is a scripted navigation rather than a
+   *      link click, which is TM's normal install path.
+   *
+   *   (default) location.replace - today's behaviour, the baseline.
+   *   anchor    a real <a> clicked from script. Same instant hand-off and the
+   *             same ~1s token lifetime, so if this fixes it we ship it with
+   *             no UX change and no change to the security posture.
+   *   manual    a visible link the user clicks. The truest "real click", but
+   *             it leaves the minted token unconsumed in the DOM until then
+   *             (up to INSTALL_TOKEN_TTL, currently 60s). Diagnostic only -
+   *             not a shape to ship without shortening that window first.
+   */
+  function go(url, mode) {
+    if (mode === 'manual') {
+      var link = document.getElementById('manual-link');
+      if (link) { link.href = url; show('state-manual'); return; }
+    }
+    if (mode === 'anchor') {
+      var a = document.createElement('a');
+      a.href = url;
+      document.body.appendChild(a);
+      a.click();
+      return;
+    }
+    location.replace(url);
   }
 
   function getSid() {
@@ -98,7 +133,7 @@
           var url = PROXY_URL + '/' + encodeURIComponent(scriptId) + '.user.js' +
                     '?s=' + encodeURIComponent(scriptId) +
                     '&it=' + encodeURIComponent(body.token);
-          location.replace(url);
+          go(url, q.mode);
           return;
         }
         // Known error shapes from the proxy.
