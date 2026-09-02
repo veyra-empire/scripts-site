@@ -1,7 +1,10 @@
 :root {
   --accent: #f2c072;
   --accent-soft: rgba(242, 192, 114, 0.25);
-  --panel-bg: rgba(15, 10, 30, 0.62);
+  /* Raised from 0.62 when .panel lost its backdrop-filter: the blur was
+     softening whatever showed through, and a little more opacity keeps the
+     panel reading as a distinct surface against the artwork. */
+  --panel-bg: rgba(15, 10, 30, 0.78);
   --panel-border: rgba(255, 200, 120, 0.28);
   --text: #f5e9d0;
   --muted: #b8ac94;
@@ -83,8 +86,14 @@ body::before {
   background: var(--panel-bg);
   border: 1px solid var(--panel-border);
   border-radius: 14px;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  /* No backdrop-filter here, deliberately. On the archive listing this
+     element is roughly 1200 x 3900 px, and a blurred backdrop that size has
+     to be re-sampled and re-blurred every scrolled frame - it was the main
+     cause of the scroll lag, and widening the panel for multi-column layout
+     made it 69% worse. Unlike box-shadow below, which rasterises once and is
+     cached, this cost is unavoidably per-frame. The two fixed overlays
+     further down keep their blur: they are small and nothing scrolls behind
+     them. --panel-bg was raised to compensate. */
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
   padding: 36px 36px 28px;
 }
