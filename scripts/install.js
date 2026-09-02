@@ -95,7 +95,19 @@
           '&s=' + encodeURIComponent(scriptId))
       .then(function(body) {
         if (body && body.token) {
-          var url = PROXY_URL + '/' + encodeURIComponent(scriptId) + '.user.js' +
+          // EXPERIMENT (revert if Tampermonkey stops intercepting):
+          // The old shape was PROXY_URL + '/<scriptId>.user.js?s=...&it=...'.
+          // Apps Script serves the plain /exec form to anyone, but treats
+          // /exec/<extra path> as needing a Google session and bounces it
+          // through accounts.google.com first. Two consequences: the extra
+          // cross-origin hops break Tampermonkey's same-tab install, so it
+          // falls back to its "intermediate step" page and strands that tab;
+          // and a member with no Google session gets a login page instead of
+          // a script, so the install just fails.
+          // The trailing .user.js was Tampermonkey's cue to offer an install,
+          // so this only holds if TM also recognises the script by the
+          // text/javascript body it gets back.
+          var url = PROXY_URL +
                     '?s=' + encodeURIComponent(scriptId) +
                     '&it=' + encodeURIComponent(body.token);
           location.replace(url);
