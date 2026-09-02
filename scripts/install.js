@@ -39,15 +39,29 @@
     } catch (_) { return null; }
   }
 
-  function getScriptId() {
+  function parseQuery() {
     var q = location.search.replace(/^\?/, '');
-    if (!q) return null;
     var out = {};
+    if (!q) return out;
     q.split('&').forEach(function(kv) {
       var i = kv.indexOf('=');
       if (i >= 0) out[decodeURIComponent(kv.slice(0, i))] = decodeURIComponent(kv.slice(i + 1));
     });
-    return out.s || null;
+    return out;
+  }
+
+  /**
+   * A dead session used to dead-end here: we cleared the cached sid, printed
+   * "sign in again at the archive", and left the member to navigate back,
+   * re-authenticate, re-find the script and click Install a second time. Since
+   * re-auth is a silent Discord redirect, all of that can happen on its own -
+   * hand the script id to the archive, let it re-authenticate, and it sends us
+   * back here with a fresh sid. `retry` is the loop guard: one recovery
+   * attempt, then we show the error for real.
+   */
+  function handoffToArchive(scriptId) {
+    try { sessionStorage.setItem('veyra_resume_install', scriptId); } catch (_) {}
+    location.replace('./');
   }
 
   function fail(state, message) {
@@ -59,11 +73,19 @@
   }
 
   function init() {
-    var scriptId = getScriptId();
+    var q = parseQuery();
+    var scriptId = q.s || null;
+    var retried  = !!q.retry;
     if (!scriptId) { fail('state-unauthenticated', 'No script id specified.'); return; }
 
     var sid = getSid();
-    if (!sid) { fail('state-unauthenticated'); return; }
+    if (!sid) {
+      // No session at all. On a first attempt that is still recoverable -
+      // the archive can sign us in silently and send us straight back.
+      if (!retried) { handoffToArchive(scriptId); return; }
+      fail('state-unauthenticated');
+      return;
+    }
 
     document.getElementById('status').textContent = 'Preparing install for "' + scriptId + '"...';
 
@@ -82,9 +104,14 @@
         // Known error shapes from the proxy.
         var err = body && body.error;
         if (err === 'expired') {
-          // Stale sid in localStorage - clear it so the archive forces re-sign-in.
+          // The sid really is dead server-side, so drop it - keeping it would
+          // just fail the next install too. Then recover automatically rather
+          // than stranding the member on an error.
           try { localStorage.removeItem(CACHE_KEY); } catch (_) {}
+          if (!retried) { handoffToArchive(scriptId); return; }
           fail('state-expired', 'Your sign-in session expired. Sign in again at the archive.');
+        } else if (err === 'server') {
+          fail('state-expired', 'The archive server hit a temporary problem. Wait a moment and try Install again.');
         } else if (err === 'tier-insufficient') {
           fail('state-expired', "Your current tier doesn't grant access to this script. Contact an officer if this is unexpected.");
         } else if (err === 'unknown') {

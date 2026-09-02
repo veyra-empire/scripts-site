@@ -30,6 +30,11 @@
   // sessionStorage is correct so stale state from prior tabs can't
   // accidentally validate a fresh callback.
   var STATE_KEY  = 'veyra_oauth_state';
+  // Set by install.html when its mint fails on a dead session: it hands the
+  // script id back here, we re-auth silently, then resume the install. Kept in
+  // sessionStorage so it is scoped to the tab doing the install and cannot
+  // hijack an unrelated tab.
+  var RESUME_KEY = 'veyra_resume_install';
 
   // ─── JSONP helper ────────────────────────────────────────────────────────
   // Apps Script /exec 302-redirects through googleusercontent.com and strips
@@ -101,7 +106,13 @@
     'oauth-exchange':  "Sign-in failed. Try again, or contact an officer if it keeps happening.",
     'oauth-identity':  "Sign-in failed. Try again, or contact an officer if it keeps happening.",
     'oauth-guilds':    "Sign-in failed. Try again, or contact an officer if it keeps happening.",
-    'oauth-error':     "Sign-in failed. Try again, or contact an officer if it keeps happening."
+    'oauth-error':     "Sign-in failed. Try again, or contact an officer if it keeps happening.",
+    // Discord answered the silent (prompt=none) sign-in with an error rather
+    // than a code. Normal when it can't confirm you without asking - it just
+    // needs a visible sign-in.
+    'oauth-silent':    "Discord couldn't sign you in automatically. Click Sign in again to complete it.",
+    'oauth-cancelled': "Sign-in was cancelled. Click Sign in to try again.",
+    'server':          "The archive server hit a temporary problem. Wait a moment and try again."
   };
 
   function showDenied(reason) {
@@ -651,12 +662,22 @@
               }));
             } catch (_) { /* quota or storage disabled; bootstrap will fall through to signin-needed */ }
           }
+          // Resume an install that was interrupted by a dead session. retry=1
+          // stops install.html bouncing back here a second time.
+          var resume = sessionStorage.getItem(RESUME_KEY);
+          if (resume) {
+            sessionStorage.removeItem(RESUME_KEY);
+            location.replace('install.html?s=' + encodeURIComponent(resume) + '&retry=1');
+            return;
+          }
           renderScripts(body);
         } else {
+          sessionStorage.removeItem(RESUME_KEY);
           showDenied((body && body.error) || 'oauth-error');
         }
       })
       .catch(function() {
+        sessionStorage.removeItem(RESUME_KEY);
         showDenied('oauth-error');
       });
   }
@@ -670,6 +691,17 @@
       return;
     }
 
+    // Discord's error redirect. With prompt=none, "I can't authorize this
+    // silently" is a perfectly normal answer and comes back as
+    // ?error=...&state=... . We used to look only for `code`, fall through,
+    // and re-render the landing - which reads as "sign-in did nothing".
+    if (q.error) {
+      clearQuery();
+      sessionStorage.removeItem(RESUME_KEY);
+      showDenied(q.error === 'access_denied' ? 'oauth-cancelled' : 'oauth-silent');
+      return;
+    }
+
     // Migrate any pre-existing sessionStorage entry from older builds.
     var legacy = sessionStorage.getItem(CACHE_KEY);
     if (legacy && !localStorage.getItem(CACHE_KEY)) {
@@ -677,29 +709,39 @@
     }
     sessionStorage.removeItem(CACHE_KEY);
 
-    // Fresh-tab detection: sessionStorage is scoped to this tab only, so no
-    // marker means "this tab just opened" (close+reopen, Ctrl+click, cold
-    // browser start). On a fresh tab, always force the sign-in landing
-    // regardless of any cached session in localStorage - stale sessions are
-    // the common case and having the user click through the signed-in UI
-    // only to get bounced to OAuth on install is wasted motion. Within the
-    // same tab (refreshes, in-tab navigations), the cached session is
-    // trusted as before.
-    var tabLive = sessionStorage.getItem('veyra_tab_live');
-    sessionStorage.setItem('veyra_tab_live', '1');
-
-    if (tabLive) {
-      var cached = localStorage.getItem(CACHE_KEY);
-      if (cached) {
-        try {
-          var data = JSON.parse(cached);
-          if (data && data.sid) {
-            renderScripts(data);
-            return;
-          }
-        } catch (_) { /* fall through to landing */ }
+    var cached = localStorage.getItem(CACHE_KEY);
+    var data = null;
+    if (cached) {
+      try { data = JSON.parse(cached); } catch (_) { data = null; }
+      if (!data || !data.sid) {
         localStorage.removeItem(CACHE_KEY);
+        data = null;
       }
+    }
+
+    // Returning from install.html after its session turned out to be dead.
+    var resume = sessionStorage.getItem(RESUME_KEY);
+    if (resume) {
+      if (data) {
+        // Already usable again (another tab refreshed it) - resume directly.
+        sessionStorage.removeItem(RESUME_KEY);
+        location.replace('install.html?s=' + encodeURIComponent(resume) + '&retry=1');
+        return;
+      }
+      // Need a fresh sid first; handleOauthCallback picks the marker back up.
+      startSignIn();
+      return;
+    }
+
+    // A usable cached session renders straight away. This used to sit behind
+    // a "did this tab just open?" check that forced the sign-in landing on
+    // browser restart, Ctrl+click, or arriving back from install.html - so a
+    // signed-in member was shown a login screen, which a plain refresh then
+    // undid. The case it guarded against (clicking through a signed-in UI
+    // only to be bounced on install) is now handled by the resume flow above.
+    if (data) {
+      renderScripts(data);
+      return;
     }
 
     show(elOauth);
