@@ -573,6 +573,34 @@
     applySort();
   });
 
+  // ─── Column count ────────────────────────────────────────────────────────
+  // Remembered per browser. Applied as a data attribute rather than an inline
+  // style so the CSS can confine it to wide viewports: an inline style would
+  // outrank the mobile rules and force a saved desktop preference of 4 onto a
+  // phone. "auto" simply drops the attribute and lets the grids size by width.
+  var COLS_KEY = 'veyra_cols';
+
+  function applyCols(v) {
+    if (v && v !== 'auto') elScripts.setAttribute('data-cols', v);
+    else                   elScripts.removeAttribute('data-cols');
+    elSortBar.querySelectorAll('.sort-btn[data-cols]').forEach(function(btn) {
+      btn.classList.toggle('active', btn.dataset.cols === (v || 'auto'));
+    });
+  }
+
+  // The sort buttons are selected as [data-sort], so these never collide.
+  elSortBar.querySelectorAll('.sort-btn[data-cols]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var v = btn.dataset.cols;
+      try { localStorage.setItem(COLS_KEY, v); } catch (_) { /* storage disabled */ }
+      applyCols(v);
+    });
+  });
+
+  var storedCols = 'auto';
+  try { storedCols = localStorage.getItem(COLS_KEY) || 'auto'; } catch (_) {}
+  applyCols(storedCols);
+
   // ─── Discord authorize URL ───────────────────────────────────────────────
   // `force` swaps prompt=none for prompt=consent. With prompt=none Discord
   // renders no UI at all for an account that has already authorized the app,

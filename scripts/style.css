@@ -24,7 +24,23 @@ html, body {
   overflow-x: hidden;
 }
 
-body {
+/* The base colour stays on `html` so it shows while the image loads, but
+   `body` must be transparent: the background layer below is a body::before
+   at z-index -1, which paints behind body's own background. Leaving the
+   opaque colour on body would hide the image entirely. */
+body { background: transparent; }
+
+/* The background lives on its own fixed layer rather than on `body` with
+   `background-attachment: fixed`. Visually identical - it still holds
+   position while the content scrolls - but `background-attachment: fixed`
+   forces a full-viewport repaint on every scroll frame, and with `.panel`
+   blurring over the top that made scrolling visibly laggy. As a separate
+   fixed element the browser composites it once and leaves it alone. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
   background-image: url('https://raw.githubusercontent.com/veyra-empire/assets/master/bg-install.png');
   background-image: image-set(
     url('https://raw.githubusercontent.com/veyra-empire/assets/master/bg-install.png') 1x,
@@ -36,12 +52,11 @@ body {
   );
   background-size: cover;
   background-position: center bottom;
-  background-attachment: fixed;
   background-repeat: no-repeat;
 }
 
 @media (max-width: 768px) and (orientation: portrait) {
-  body {
+  body::before {
     background-image: url('https://raw.githubusercontent.com/veyra-empire/assets/master/bg-install-m.png');
   }
 }
@@ -53,6 +68,13 @@ body {
   flex-direction: column;
   align-items: center;
   padding: 8vh 20px 40px;
+}
+
+/* Widened for the archive listing only. `.panel` is shared with the sign-in
+   and denied states, which look absurd stretched across a wide monitor, so
+   this is scoped to the state that actually holds a grid. */
+.panel:has(> #state-scripts:not([hidden])) {
+  max-width: min(1400px, 95vw);
 }
 
 .panel {
@@ -177,13 +199,49 @@ button:hover, .install-btn:hover {
 
 .scripts-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 14px;
 }
 @media (max-width: 600px) {
   .scripts-grid { grid-template-columns: 1fr; }
   .panel { padding: 24px 20px; }
   h1 { font-size: 1.8rem; }
+}
+
+/* Manual column count, set by the Columns buttons and remembered per
+   browser. Deliberately confined to this media query rather than applied as
+   an inline style: an inline style would outrank the mobile rules above and
+   force a saved desktop preference of 4 onto a phone. Below 900px the
+   buttons are hidden and the grids stay width-driven.
+   minmax(0, 1fr) rather than minmax(280px, 1fr) so a chosen count cannot
+   overflow a window too narrow to hold it. */
+@media (min-width: 900px) {
+  #state-scripts[data-cols="2"] .scripts-grid,
+  #state-scripts[data-cols="2"] .resources-grid,
+  #state-scripts[data-cols="2"] .extensions-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #state-scripts[data-cols="3"] .scripts-grid,
+  #state-scripts[data-cols="3"] .resources-grid,
+  #state-scripts[data-cols="3"] .extensions-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  #state-scripts[data-cols="4"] .scripts-grid,
+  #state-scripts[data-cols="4"] .resources-grid,
+  #state-scripts[data-cols="4"] .extensions-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* The control is meaningless where the grids are width-driven. */
+.cols-group { display: none; }
+@media (min-width: 900px) {
+  .cols-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+  }
 }
 
 .script-card {
