@@ -1,8 +1,22 @@
 (function() {
   'use strict';
 
-  // Must match PROXY_URL in app.js.
+  // Must match PROXY_URL in app.js. Still used for the JSONP mint call.
   var PROXY_URL = 'https://script.google.com/macros/s/AKfycbzUHg1z18WmWFSyEsZStaK2kmax2JXnPzK4LrTyEitSFVBQ2u2vfFeO6wZhjWx58EJZ7w/exec';
+
+  // The script itself is fetched through the forwarder rather than from Apps
+  // Script directly. Apps Script serves /exec?query anonymously but sends
+  // /exec/<path> through accounts.google.com, and Tampermonkey only
+  // intercepts URLs ending in .user.js - so hitting Apps Script directly
+  // meant a Google login page for anyone without a Google session, plus
+  // enough cross-origin hops that TM lost its same-tab install and stranded
+  // an "intermediate step" tab. The forwarder presents a clean .user.js URL
+  // and uses the query form server-side. Source in veyra-empire-proxy/worker/.
+  //
+  // Stable URL only - never a *-scripts.veyra-empire.workers.dev preview,
+  // which changes on every deploy.
+  var WORKER_URL = 'https://scripts.veyra-empire.workers.dev';
+
   var CACHE_KEY = 'veyra_session';
 
   // ─── JSONP helper (matches app.js) ───────────────────────────────────────
@@ -95,9 +109,11 @@
           '&s=' + encodeURIComponent(scriptId))
       .then(function(body) {
         if (body && body.token) {
-          var url = PROXY_URL + '/' + encodeURIComponent(scriptId) + '.user.js' +
-                    '?s=' + encodeURIComponent(scriptId) +
-                    '&it=' + encodeURIComponent(body.token);
+          var url = WORKER_URL + '/s/' + encodeURIComponent(scriptId) + '.user.js' +
+                    '?it=' + encodeURIComponent(body.token);
+          // location.replace, never an anchor click: a.click() pushes a
+          // history entry, so closing TM's install tab navigates back here
+          // and re-mints in an endless loop.
           location.replace(url);
           return;
         }
