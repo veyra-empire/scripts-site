@@ -103,10 +103,17 @@
 
     document.getElementById('status').textContent = 'Preparing install for "' + scriptId + '"...';
 
-    jsonp(PROXY_URL +
-          '?api=mint-install-token' +
-          '&session=' + encodeURIComponent(sid) +
-          '&s=' + encodeURIComponent(scriptId))
+    // One silent retry. The mint is a single JSONP call against Apps Script,
+    // which occasionally stalls long enough to hit jsonp()'s 30s timeout; a
+    // second attempt lands on a warm instance. Safe to repeat - a token that
+    // is minted and never used simply expires.
+    var mintUrl = PROXY_URL +
+                  '?api=mint-install-token' +
+                  '&session=' + encodeURIComponent(sid) +
+                  '&s=' + encodeURIComponent(scriptId);
+
+    jsonp(mintUrl)
+      .catch(function() { return jsonp(mintUrl); })
       .then(function(body) {
         if (body && body.token) {
           var url = WORKER_URL + '/s/' + encodeURIComponent(scriptId) + '.user.js' +
