@@ -601,6 +601,33 @@
   try { storedCols = localStorage.getItem(COLS_KEY) || 'auto'; } catch (_) {}
   applyCols(storedCols);
 
+  // ─── Backdrop opacity ────────────────────────────────────────────────────
+  // How much of the background artwork shows through the panel. Unlike the
+  // column count this is set as a plain custom property with no media query,
+  // so a saved preference does carry to mobile - it is cosmetic and cannot
+  // break the layout, whereas forcing four columns onto a phone would.
+  var ALPHA_KEY = 'veyra_panel_alpha';
+  var ALPHA_DEFAULT = '0.78';
+
+  function applyAlpha(v) {
+    document.documentElement.style.setProperty('--panel-alpha', v);
+    elSortBar.querySelectorAll('.sort-btn[data-alpha]').forEach(function(btn) {
+      btn.classList.toggle('active', btn.dataset.alpha === v);
+    });
+  }
+
+  elSortBar.querySelectorAll('.sort-btn[data-alpha]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var v = btn.dataset.alpha;
+      try { localStorage.setItem(ALPHA_KEY, v); } catch (_) { /* storage disabled */ }
+      applyAlpha(v);
+    });
+  });
+
+  var storedAlpha = ALPHA_DEFAULT;
+  try { storedAlpha = localStorage.getItem(ALPHA_KEY) || ALPHA_DEFAULT; } catch (_) {}
+  applyAlpha(storedAlpha);
+
   // ─── Discord authorize URL ───────────────────────────────────────────────
   // `force` swaps prompt=none for prompt=consent. With prompt=none Discord
   // renders no UI at all for an account that has already authorized the app,

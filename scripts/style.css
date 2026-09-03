@@ -1,10 +1,13 @@
 :root {
   --accent: #f2c072;
   --accent-soft: rgba(242, 192, 114, 0.25);
-  /* Raised from 0.62 when .panel lost its backdrop-filter: the blur was
-     softening whatever showed through, and a little more opacity keeps the
-     panel reading as a distinct surface against the artwork. */
-  --panel-bg: rgba(15, 10, 30, 0.78);
+  /* Default raised from 0.62 when .panel lost its backdrop-filter: the blur
+     was softening whatever showed through, and a little more opacity keeps
+     the panel reading as a distinct surface against the artwork.
+     Split into an alpha channel so the Backdrop buttons can adjust it at
+     runtime - see applyAlpha() in app.js. */
+  --panel-alpha: 0.78;
+  --panel-bg: rgba(15, 10, 30, var(--panel-alpha));
   --panel-border: rgba(255, 200, 120, 0.28);
   --text: #f5e9d0;
   --muted: #b8ac94;
@@ -242,15 +245,22 @@ button:hover, .install-btn:hover {
   }
 }
 
-/* The control is meaningless where the grids are width-driven. */
-.cols-group { display: none; }
+/* Sort-bar option groups. Hidden on narrow screens where the bar has no room
+   for them - the Columns setting is meaningless there anyway, since the grids
+   are width-driven, and Backdrop falls back to the default.
+   Note the two behave differently when a preference is saved: a stored
+   column count is ignored on mobile by the media query above, because
+   forcing four columns onto a phone would break the layout. A stored
+   backdrop alpha is a plain custom property with no media query, so it does
+   carry over - which is what you want, since it is purely cosmetic. */
+.bar-group { display: none; }
 @media (min-width: 900px) {
-  .cols-group {
+  .bar-group {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    margin-left: auto;
   }
+  .bar-group.push { margin-left: auto; }
 }
 
 .script-card {

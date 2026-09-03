@@ -110,7 +110,14 @@
             <button class="sort-btn"        data-sort="author">Author</button>
             <button class="sort-btn"        data-sort="tier">Tier</button>
             <button class="sort-btn sort-dir" id="sortDir" title="Toggle ascending / descending" aria-label="Toggle direction">&#x25B2;</button>
-            <span class="cols-group" id="colsGroup">
+            <span class="bar-group push" id="alphaGroup">
+              <span class="label">Backdrop</span>
+              <button class="sort-btn"        data-alpha="0.62" title="Let more of the artwork through">Full</button>
+              <button class="sort-btn active" data-alpha="0.78">Dim</button>
+              <button class="sort-btn"        data-alpha="0.90">Faint</button>
+              <button class="sort-btn"        data-alpha="1"    title="Hide the artwork behind the panel">Off</button>
+            </span>
+            <span class="bar-group" id="colsGroup">
               <span class="label">Columns</span>
               <button class="sort-btn active" data-cols="auto" title="Fit as many columns as the window allows">Auto</button>
               <button class="sort-btn"        data-cols="2">2</button>
