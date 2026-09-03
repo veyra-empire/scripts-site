@@ -174,6 +174,18 @@
           meta.appendChild(pill);
         }
 
+        // The name Tampermonkey lists it under, shown only when it differs
+        // from the archive title (the proxy decides, and normalises so
+        // case-only differences stay hidden). Lets a member match a dashboard
+        // entry back to a card - the lookup needed to tell two installed
+        // copies of the same script apart.
+        var installName = null;
+        if (s.installName) {
+          installName = document.createElement('div');
+          installName.className = 'script-install-name';
+          installName.textContent = 'Installs as "' + s.installName + '"';
+        }
+
         var desc = document.createElement('div');
         desc.className = 'script-desc';
         desc.textContent = s.description || '';
@@ -232,6 +244,7 @@
 
         card.appendChild(titleWrap);
         card.appendChild(meta);
+        if (installName) card.appendChild(installName);
         card.appendChild(desc);
         if (changelogEl) card.appendChild(changelogEl);
         if (thumb) card.appendChild(thumb);

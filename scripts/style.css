@@ -364,6 +364,19 @@ button:hover, .install-btn:hover {
   color: var(--muted);
   overflow-wrap: anywhere;
 }
+
+/* The name Tampermonkey lists the script under, when it differs from the
+   archive title. Quieter than .script-meta - it is a reference detail, only
+   wanted when someone is matching a card against their dashboard.
+   overflow-wrap matters: these names are long and cards can be ~150px at
+   Narrow width with 4 columns. */
+.script-install-name {
+  font-size: 0.72rem;
+  color: var(--muted);
+  opacity: 0.75;
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+}
 .script-desc {
   font-size: 0.88rem;
   line-height: 1.45;
