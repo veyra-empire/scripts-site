@@ -47,14 +47,14 @@ body::before {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background-image: url('https://raw.githubusercontent.com/veyra-empire/assets/master/bg-install.png');
+  background-image: url('https://raw.githubusercontent.com/veyra-empire/assets/master/bg-install.webp');
   background-image: image-set(
-    url('https://raw.githubusercontent.com/veyra-empire/assets/master/bg-install.png') 1x,
-    url('https://raw.githubusercontent.com/veyra-empire/assets/master/bg-install-2x.png') 2x
+    url('https://raw.githubusercontent.com/veyra-empire/assets/master/bg-install.webp') 1x,
+    url('https://raw.githubusercontent.com/veyra-empire/assets/master/bg-install-2x.webp') 2x
   );
   background-image: -webkit-image-set(
-    url('https://raw.githubusercontent.com/veyra-empire/assets/master/bg-install.png') 1x,
-    url('https://raw.githubusercontent.com/veyra-empire/assets/master/bg-install-2x.png') 2x
+    url('https://raw.githubusercontent.com/veyra-empire/assets/master/bg-install.webp') 1x,
+    url('https://raw.githubusercontent.com/veyra-empire/assets/master/bg-install-2x.webp') 2x
   );
   background-size: cover;
   background-position: center bottom;
@@ -63,7 +63,7 @@ body::before {
 
 @media (max-width: 768px) and (orientation: portrait) {
   body::before {
-    background-image: url('https://raw.githubusercontent.com/veyra-empire/assets/master/bg-install-m.png');
+    background-image: url('https://raw.githubusercontent.com/veyra-empire/assets/master/bg-install-m.webp');
   }
 }
 
