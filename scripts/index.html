@@ -120,7 +120,6 @@
                 <button class="sort-btn"        data-width="1000px">Medium</button>
                 <button class="sort-btn active" data-width="min(1400px, 95vw)">Wide</button>
                 <button class="sort-btn"        data-width="98vw">Full</button>
-                <button class="sort-btn"        data-ui-off title="Hide the interface and show only the artwork. Press Escape to bring it back.">Off</button>
               </span>
               <span class="bar-group" id="colsGroup">
                 <span class="label">Columns</span>
@@ -144,6 +143,15 @@
                 <button class="sort-btn active" data-alpha="0.78">Dim</button>
                 <button class="sort-btn"        data-alpha="0.90">Faint</button>
                 <button class="sort-btn"        data-alpha="1"    title="Hide the artwork behind the panel">Off</button>
+              </span>
+              <!-- Its own group deliberately. Everything else here is a
+                   persisted setting with an active state; this is a one-shot
+                   action that can never show as active, since applying it
+                   hides the row it lives in. It also has to stay reachable on
+                   mobile, where Panel and Columns drop out. -->
+              <span class="bar-group" id="uiGroup">
+                <span class="label">Interface</span>
+                <button class="sort-btn" data-ui-off title="Show only the artwork. Press Escape or use the corner button to bring it back.">Hide</button>
               </span>
             </div>
           </div>

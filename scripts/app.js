@@ -693,14 +693,23 @@
   // so restoring returns to whatever width they had chosen.
   var elUiRestore = document.getElementById('uiRestore');
 
+  var uiSavedScroll = 0;
+
   function setUiHidden(hidden) {
     if (hidden) {
+      // The page collapses to viewport height once the panel is gone, so the
+      // offset has to be stashed rather than left in place - it would just be
+      // clamped to zero.
+      uiSavedScroll = window.scrollY;
       document.documentElement.setAttribute('data-ui', 'off');
-      // The page collapses to viewport height once the panel is gone, so a
-      // retained scroll offset would leave the view somewhere arbitrary.
       window.scrollTo(0, 0);
     } else {
       document.documentElement.removeAttribute('data-ui');
+      // Forcing a reflow here is load-bearing. Removing the attribute does
+      // not recompute layout synchronously, so scrollTo would be clamped
+      // against the still-collapsed page height and land back at the top.
+      void document.documentElement.offsetHeight;
+      window.scrollTo(0, uiSavedScroll);
     }
   }
 
