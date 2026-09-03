@@ -385,12 +385,21 @@ button:hover, .install-btn:hover {
 }
 .script-thumb img {
   display: block;
-  max-width: 200px;
-  max-height: 120px;
+  /* Scaled by the Thumbs buttons - see applyThumbs() in app.js.
+     min(100%, ...) is load-bearing: at Large inside a Narrow panel with 4
+     columns a card can be ~150px wide, and a bare 320px cap would overflow
+     it, which is the same failure the mobile overflow fix dealt with. */
+  max-width: min(100%, calc(200px * var(--thumb-scale, 1)));
+  max-height: calc(120px * var(--thumb-scale, 1));
   width: auto;
   height: auto;
   object-fit: cover;
 }
+
+/* Off is display:none rather than --thumb-scale:0, because a zero-sized
+   image would still be fetched. With no layout box the lazy loader never
+   requests it, so this skips the screenshots entirely - about 2.5 MB. */
+[data-thumbs="off"] .script-thumb { display: none; }
 .install-btn {
   align-self: flex-start;
   margin-top: 4px;

@@ -653,6 +653,39 @@
   try { storedWidth = localStorage.getItem(WIDTH_KEY) || WIDTH_DEFAULT; } catch (_) {}
   applyWidth(storedWidth);
 
+  // ─── Thumbnail size ──────────────────────────────────────────────────────
+  // Safe for scrolling: the screenshots are already downloaded and decoded at
+  // full source resolution (up to 1601x904) regardless of display size, and
+  // painting a cached raster larger is compositing work, not the per-frame
+  // recomputation that made backdrop-filter expensive. "off" is the only
+  // option that changes cost, and it changes it downward.
+  var THUMB_KEY = 'veyra_thumb_scale';
+  var THUMB_DEFAULT = '1';
+
+  function applyThumbs(v) {
+    if (v === 'off') {
+      document.documentElement.setAttribute('data-thumbs', 'off');
+    } else {
+      document.documentElement.removeAttribute('data-thumbs');
+      document.documentElement.style.setProperty('--thumb-scale', v);
+    }
+    elSortBar.querySelectorAll('.sort-btn[data-thumb]').forEach(function(btn) {
+      btn.classList.toggle('active', btn.dataset.thumb === v);
+    });
+  }
+
+  elSortBar.querySelectorAll('.sort-btn[data-thumb]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var v = btn.dataset.thumb;
+      try { localStorage.setItem(THUMB_KEY, v); } catch (_) { /* storage disabled */ }
+      applyThumbs(v);
+    });
+  });
+
+  var storedThumb = THUMB_DEFAULT;
+  try { storedThumb = localStorage.getItem(THUMB_KEY) || THUMB_DEFAULT; } catch (_) {}
+  applyThumbs(storedThumb);
+
   // ─── Hide the interface ──────────────────────────────────────────────────
   // Deliberately NOT persisted. It is an action, not a setting: a reload
   // always brings the UI back, so nobody can return to a near-blank archive
