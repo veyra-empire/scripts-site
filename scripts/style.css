@@ -287,6 +287,11 @@ button:hover, .install-btn:hover {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  /* .bar-options wraps the groups relative to each other, but each group is
+     its own flex line - without this the six Thumbs buttons refuse to wrap
+     and run past a phone's viewport, where html's overflow-x:hidden clips
+     them into being unreachable rather than showing a scrollbar. */
+  flex-wrap: wrap;
 }
 
 /* Sort is used constantly and stays visible; Backdrop and Columns are set
@@ -309,15 +314,17 @@ button:hover, .install-btn:hover {
 }
 .bar-options[hidden] { display: none; }
 
-/* Below 900px neither setting can do anything: the grids are width-driven
-   there, and the bar has no room. Note the two settings differ once saved -
-   a stored column count is ignored on mobile by the media query above,
-   because forcing four columns onto a phone would break the layout, whereas
-   a stored backdrop alpha is a plain custom property with no media query and
-   does carry over, which is fine since it is purely cosmetic. */
+/* Below 900px only Panel and Columns drop out: the grids are width-driven
+   there and there is no room for extra columns, whereas Thumbs and Backdrop
+   work at any width and matter more on a phone, where screenshots dominate
+   the scroll. The toggle and the options row itself stay.
+   A stored Panel width is harmless here regardless - every option exceeds a
+   phone's available width, so width:100% governs either way. A stored column
+   count is genuinely ignored, by the min-width media query above, because
+   forcing four columns onto a phone would break the layout. */
 @media (max-width: 899px) {
-  .bar-toggle,
-  .bar-options { display: none; }
+  #widthGroup,
+  #colsGroup { display: none; }
 }
 
 .script-card {
@@ -1097,6 +1104,15 @@ button:hover, .install-btn:hover {
   right: 20px;
   width: 40px;
   height: 40px;
+  /* padding:0 is required, not cosmetic. The generic `button` rule sets
+     12px 22px, and with box-sizing:border-box that is 44px of horizontal
+     padding inside a 40px-wide button - the content box collapses and the
+     glyph lands off-centre. Flex centring then places it reliably instead of
+     depending on the font's own metrics. */
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 1.8rem;
   line-height: 1;
   background: transparent;
