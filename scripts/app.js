@@ -628,6 +628,58 @@
   try { storedAlpha = localStorage.getItem(ALPHA_KEY) || ALPHA_DEFAULT; } catch (_) {}
   applyAlpha(storedAlpha);
 
+  // ─── Panel width ─────────────────────────────────────────────────────────
+  // Drives --panel-max, which the archive listing's max-width reads. Same
+  // custom-property approach as the backdrop alpha above.
+  var WIDTH_KEY = 'veyra_panel_width';
+  var WIDTH_DEFAULT = 'min(1400px, 95vw)';
+
+  function applyWidth(v) {
+    document.documentElement.style.setProperty('--panel-max', v);
+    elSortBar.querySelectorAll('.sort-btn[data-width]').forEach(function(btn) {
+      btn.classList.toggle('active', btn.dataset.width === v);
+    });
+  }
+
+  elSortBar.querySelectorAll('.sort-btn[data-width]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var v = btn.dataset.width;
+      try { localStorage.setItem(WIDTH_KEY, v); } catch (_) { /* storage disabled */ }
+      applyWidth(v);
+    });
+  });
+
+  var storedWidth = WIDTH_DEFAULT;
+  try { storedWidth = localStorage.getItem(WIDTH_KEY) || WIDTH_DEFAULT; } catch (_) {}
+  applyWidth(storedWidth);
+
+  // ─── Hide the interface ──────────────────────────────────────────────────
+  // Deliberately NOT persisted. It is an action, not a setting: a reload
+  // always brings the UI back, so nobody can return to a near-blank archive
+  // and no stored state can strand them. The stored width is left untouched,
+  // so restoring returns to whatever width they had chosen.
+  var elUiRestore = document.getElementById('uiRestore');
+
+  function setUiHidden(hidden) {
+    if (hidden) {
+      document.documentElement.setAttribute('data-ui', 'off');
+      // The page collapses to viewport height once the panel is gone, so a
+      // retained scroll offset would leave the view somewhere arbitrary.
+      window.scrollTo(0, 0);
+    } else {
+      document.documentElement.removeAttribute('data-ui');
+    }
+  }
+
+  var elUiOff = elSortBar.querySelector('.sort-btn[data-ui-off]');
+  if (elUiOff) elUiOff.addEventListener('click', function() { setUiHidden(true); });
+  elUiRestore.addEventListener('click', function() { setUiHidden(false); });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.documentElement.getAttribute('data-ui') === 'off') {
+      setUiHidden(false);
+    }
+  });
+
   // ─── Display options toggle ──────────────────────────────────────────────
   // Backdrop and Columns are set once and forgotten, so they stay collapsed
   // by default. Sort is left out of this deliberately - it is used often

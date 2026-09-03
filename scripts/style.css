@@ -8,6 +8,9 @@
      runtime - see applyAlpha() in app.js. */
   --panel-alpha: 0.78;
   --panel-bg: rgba(15, 10, 30, var(--panel-alpha));
+  /* Archive listing width, driven by the Panel buttons - see applyWidth()
+     in app.js. Same custom-property approach as --panel-alpha above. */
+  --panel-max: min(1400px, 95vw);
   --panel-border: rgba(255, 200, 120, 0.28);
   --text: #f5e9d0;
   --muted: #b8ac94;
@@ -80,8 +83,40 @@ body::before {
    and denied states, which look absurd stretched across a wide monitor, so
    this is scoped to the state that actually holds a grid. */
 .panel:has(> #state-scripts:not([hidden])) {
-  max-width: min(1400px, 95vw);
+  max-width: var(--panel-max);
 }
+
+/* "Panel: Off" - show the artwork with nothing over it.
+   Deliberately scoped through the same :has() as the width rule above, so it
+   can only ever hide the archive listing. If it applied to .panel generally,
+   a member could hide the UI, sign out, and be left with no way back in.
+   Transient by design: nothing about this is written to localStorage, so a
+   reload always brings the UI back. */
+[data-ui="off"] .panel:has(> #state-scripts:not([hidden])) { display: none; }
+/* .overlay dims the artwork independently of the panel, so it has to lift
+   too - otherwise "just the backdrop" is still a washed-out backdrop. */
+[data-ui="off"] .overlay { background: none; }
+
+/* Lives outside .panel so it can never be hidden along with it. Paired with
+   the Escape key, so a mis-click is never a dead end. */
+.ui-restore {
+  display: none;
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 2147483000;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: rgba(15, 10, 30, 0.82);
+  color: var(--accent);
+  font: 600 0.8rem/1.3 inherit;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.ui-restore:hover { background: rgba(15, 10, 30, 0.95); border-color: var(--accent); }
+[data-ui="off"] .ui-restore { display: inline-block; }
 
 .panel {
   width: 100%;

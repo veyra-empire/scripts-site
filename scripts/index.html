@@ -114,12 +114,13 @@
             </span>
             <button class="sort-btn bar-toggle" id="displayToggle" aria-expanded="false" aria-controls="barOptions">Display</button>
             <div class="bar-options" id="barOptions" hidden>
-              <span class="bar-group" id="alphaGroup">
-                <span class="label">Backdrop</span>
-                <button class="sort-btn"        data-alpha="0.62" title="Let more of the artwork through">Full</button>
-                <button class="sort-btn active" data-alpha="0.78">Dim</button>
-                <button class="sort-btn"        data-alpha="0.90">Faint</button>
-                <button class="sort-btn"        data-alpha="1"    title="Hide the artwork behind the panel">Off</button>
+              <span class="bar-group" id="widthGroup">
+                <span class="label">Panel</span>
+                <button class="sort-btn"        data-width="720px">Narrow</button>
+                <button class="sort-btn"        data-width="1000px">Medium</button>
+                <button class="sort-btn active" data-width="min(1400px, 95vw)">Wide</button>
+                <button class="sort-btn"        data-width="98vw">Full</button>
+                <button class="sort-btn"        data-ui-off title="Hide the interface and show only the artwork. Press Escape to bring it back.">Off</button>
               </span>
               <span class="bar-group" id="colsGroup">
                 <span class="label">Columns</span>
@@ -127,6 +128,13 @@
                 <button class="sort-btn"        data-cols="2">2</button>
                 <button class="sort-btn"        data-cols="3">3</button>
                 <button class="sort-btn"        data-cols="4">4</button>
+              </span>
+              <span class="bar-group" id="alphaGroup">
+                <span class="label">Backdrop</span>
+                <button class="sort-btn"        data-alpha="0.62" title="Let more of the artwork through">Full</button>
+                <button class="sort-btn active" data-alpha="0.78">Dim</button>
+                <button class="sort-btn"        data-alpha="0.90">Faint</button>
+                <button class="sort-btn"        data-alpha="1"    title="Hide the artwork behind the panel">Off</button>
               </span>
             </div>
           </div>
@@ -165,6 +173,10 @@
     <img id="lightbox-img" class="lightbox-img" alt="">
     <p id="lightbox-caption" class="lightbox-caption"></p>
   </div>
+
+  <!-- Sits outside .panel deliberately, so hiding the panel cannot hide the
+       only way back. Shown by CSS only while data-ui="off". -->
+  <button type="button" class="ui-restore" id="uiRestore">Show interface</button>
 
   <script src="app.js"></script>
 </body>
