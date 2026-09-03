@@ -628,6 +628,30 @@
   try { storedAlpha = localStorage.getItem(ALPHA_KEY) || ALPHA_DEFAULT; } catch (_) {}
   applyAlpha(storedAlpha);
 
+  // ─── Display options toggle ──────────────────────────────────────────────
+  // Backdrop and Columns are set once and forgotten, so they stay collapsed
+  // by default. Sort is left out of this deliberately - it is used often
+  // enough that hiding it behind a click would be a regression.
+  var BAR_KEY = 'veyra_bar_open';
+  var elBarToggle  = document.getElementById('displayToggle');
+  var elBarOptions = document.getElementById('barOptions');
+
+  function applyBarOpen(open) {
+    elBarOptions.hidden = !open;
+    elBarToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    elBarToggle.classList.toggle('active', open);
+  }
+
+  elBarToggle.addEventListener('click', function() {
+    var open = elBarOptions.hidden;
+    try { localStorage.setItem(BAR_KEY, open ? '1' : '0'); } catch (_) { /* storage disabled */ }
+    applyBarOpen(open);
+  });
+
+  var barOpen = false;
+  try { barOpen = localStorage.getItem(BAR_KEY) === '1'; } catch (_) {}
+  applyBarOpen(barOpen);
+
   // ─── Discord authorize URL ───────────────────────────────────────────────
   // `force` swaps prompt=none for prompt=consent. With prompt=none Discord
   // renders no UI at all for an account that has already authorized the app,

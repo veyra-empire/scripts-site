@@ -245,22 +245,44 @@ button:hover, .install-btn:hover {
   }
 }
 
-/* Sort-bar option groups. Hidden on narrow screens where the bar has no room
-   for them - the Columns setting is meaningless there anyway, since the grids
-   are width-driven, and Backdrop falls back to the default.
-   Note the two behave differently when a preference is saved: a stored
-   column count is ignored on mobile by the media query above, because
-   forcing four columns onto a phone would break the layout. A stored
-   backdrop alpha is a plain custom property with no media query, so it does
-   carry over - which is what you want, since it is purely cosmetic. */
-.bar-group { display: none; }
-@media (min-width: 900px) {
-  .bar-group {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .bar-group.push { margin-left: auto; }
+/* Every cluster in the sort bar has the same shape: a label followed by its
+   buttons. 6px within a group against the bar's own 10px, and 22px between
+   groups on the options row, so the clusters read as deliberate. */
+.bar-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Sort is used constantly and stays visible; Backdrop and Columns are set
+   once and forgotten, so they live behind this toggle. It is the only thing
+   claiming the free space now. */
+.bar-toggle { margin-left: auto; }
+
+/* Revealed row. flex-basis:100% uses .sort-bar's existing flex-wrap to force
+   a line break, so the options sit under the sort controls rather than
+   cramming in beside them. */
+.bar-options {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 22px;
+  margin-top: 10px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.bar-options[hidden] { display: none; }
+
+/* Below 900px neither setting can do anything: the grids are width-driven
+   there, and the bar has no room. Note the two settings differ once saved -
+   a stored column count is ignored on mobile by the media query above,
+   because forcing four columns onto a phone would break the layout, whereas
+   a stored backdrop alpha is a plain custom property with no media query and
+   does carry over, which is fine since it is purely cosmetic. */
+@media (max-width: 899px) {
+  .bar-toggle,
+  .bar-options { display: none; }
 }
 
 .script-card {
@@ -572,7 +594,10 @@ button:hover, .install-btn:hover {
   background: rgba(242, 192, 114, 0.08);
 }
 .sort-dir {
-  margin-left: auto;
+  /* No margin-left:auto. It dates from when Sort was the only cluster in the
+     bar; once Backdrop and Columns arrived, two competing auto margins split
+     the free space and stranded this arrow in the middle of the bar. It
+     belongs beside the buttons it modifies. */
   min-width: 42px;
   text-align: center;
   font-weight: 600;
